@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {{ include general/styles }}
+        <style>
+            body {
+                padding: 10px;
+                background: #e3e5ef;
+            }
+            .centered {
+                width: 360px;
+                height: 460px;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                margin-top: -220px;
+                margin-left: -170px;
+            }
+            form {
+                width: 100%;
+            }
+            .steps {
+                margin-bottom: 20px;
+            }
+            .btn[disabled] {
+                display: none;
+            }
+            [data-role="step"] {
+                margin-bottom: 20px;
+            }
+            button.disabled {
+                cursor: not-allowed;
+            }
+            .message {
+                padding: 12px 16px;
+                margin: 12px 0;
+                opacity: 0;
+                transition: opacity 0.28s;
+            }
+
+            .loader {
+                width: 45px;
+                aspect-ratio: 4;
+                background: radial-gradient(circle closest-side,#3f6a6c 90%,#3f6a6c00) 0/calc(100%/3) 100% space;
+                clip-path: inset(0 100% 0 0);
+                animation: l1 1.5s steps(4) infinite;
+            }
+            @keyframes l1 { from { inset(0 100% 0 0) } 20% { clip-path: inset(0 100% 0 0) } to { clip-path: inset(0 -34% 0 0) } }
+
+            #loader  {
+                margin: 0px auto -20px;
+                padding: 4px 0;
+                display: none;
+                opacity: 0;
+            }
+
+        </style>
+        {{ include general/steps }}
+        <script>
+            window.addEventListener('DOMContentLoaded', function() {
+                document.querySelectorAll('form input, form textarea').forEach(el => {
+                    el.addEventListener('input', function() {
+                        if (this.parentNode.parentNode.validator && this.parentNode.parentNode.validator instanceof Function) {
+                            delete this.parentNode.parentNode.validator.ok;
+                        }
+                    });
+                });
+
+                document.querySelector('form [data-step="0"]').validator = async function() {
+                    let self = this;
+                    let form = getForm(self);
+
+                    if (self.validator.in_progress) return;
+                    self.validator.in_progress = true;
+
+                    document.getElementById('error').style.display = 'none';
+                    document.getElementById('error').style.opacity = '0';
+                    form.querySelector('[data-action="next"]').classList.add('disabled');
+
+                    document.querySelector('#loader').style.display = 'block';
+                    document.querySelector('#loader').style.opacity = '1';
+
+                    let inputs = this.querySelectorAll('input');
+                    if (inputs[0].value == '') inputs[0].value = 'localhost';
+                    if (inputs[1].value == '') inputs[1].value = 'tpf';
+
+                    const fd = new FormData();
+                    fd.append('db_host', inputs[0].value);
+                    fd.append('db_name', inputs[1].value);
+                    fd.append('db_user', inputs[2].value);
+                    fd.append('db_pass', inputs[3].value);
+                    const data = new URLSearchParams();
+                    for (const pair of fd) {
+                        data.append(pair[0], pair[1]);
+                    }
+                    return fetch('/db-check', { method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: data
+                    }).then(res => res.json()).then((res) => {
+                        self.validator.ok = res.result ?? false;
+                        if (res.result) {
+                            setTimeout(() => form.querySelector('[data-action="next"]').click(), 100);
+                        } else {
+                            document.getElementById('error').innerHTML = 'Database connection error';
+                            document.getElementById('error').style.display = '';
+                            setTimeout(() => document.getElementById('error').style.opacity = '1', 0);
+                        }
+                        document.querySelector('#loader').style.display = '';
+                        document.querySelector('#loader').style.opacity = '';
+                    }).finally(() => {
+                        self.validator.in_progress = false;
+                        form.querySelector('[data-action="next"]').classList.remove('disabled');
+                    });
+                }
+
+                function getForm(el) {
+                    el = el.parentNode;
+                    while (el.parentNode && el.tagName != 'form') {
+                        el = el.parentNode;
+                    }
+                    return el;
+                }
+            });
+        </script>
+    </head>
+    <body>
+        <div class="centered">
+            <div class="steps">
+                <div class="steps__step" data-step="0">
+                    <div class="steps__step-number">1</div>
+                    <div class="steps__step-name">Database</div>
+                </div>
+                <div class="steps__connector"></div>
+                <div class="steps__step" data-step="1">
+                    <div class="steps__step-number">2</div>
+                    <div class="steps__step-name">Email</div>
+                </div>
+                <div class="steps__connector"></div>
+                <div class="steps__step" data-step="2">
+                    <div class="steps__step-number">3</div>
+                    <div class="steps__step-name">Account</div>
+                </div>
+            </div>
+            <div class="block">
+                <form method="post" action="" target="ifr" data-redirect-uri="/login" style="margin-top: 10px">
+                    <div data-role="step" data-step="0">
+                        <div class="form-group">
+                            <label for="db_name">Database host</label>
+                            <input type="text" class="form-control" name="db_host" id="db_host" value="localhost">
+                        </div>
+                        <div class="form-group">
+                            <label for="db_name">Database name</label>
+                            <input type="text" class="form-control" name="db_name" id="db_name" value="tpf_framework">
+                        </div>
+                        <div class="form-group">
+                            <label for="db_user">Database user</label>
+                            <input type="text" class="form-control" name="db_user" id="db_user" value="admin" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="db_password">Database password</label>
+                            <input type="password" class="form-control" name="db_password" id="db_password" required autocomplete="off">
+                        </div>
+                    </div>
+                    <div data-role="step" data-step="1">
+                        <div class="form-group">
+                            <label for="email_server">SMTP server</label>
+                            <input type="text" class="form-control" name="email_server" id="email_server" value="smtp.gmail.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="email_port">SMTP port</label>
+                            <input type="text" class="form-control" name="email_port" id="email_port" value="465">
+                        </div>
+                        <div class="form-group">
+                            <label for="db_user">SMTP username</label>
+                            <input type="text" class="form-control" name="email_user" id="email_user" value="admin" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email_password">SMTP password</label>
+                            <input type="password" class="form-control" name="email_password" id="email_password" required autocomplete="off">
+                        </div>
+                    </div>
+                    <div data-role="step" data-step="2">
+                        <div class="form-group">
+                            <label for="admin_password">Administrator password</label>
+                            <input type="password" class="form-control" name="admin_password" id="admin_password" required autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary float-start" data-action="prev">Back</button>
+                        <div class="loader" id="loader"></div>
+                        <button class="btn btn-primary float-end" data-action="next">Next</button>
+                    </div>
+                </form>
+            </div>
+            <div class="block message" id="error" style="display: none"></div>
+        </div>
+        <iframe name="ifr" id="ifr" style="display: none; visibility: hidden"></iframe>
+    </body>
+</html>

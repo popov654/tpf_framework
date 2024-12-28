@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        {{ include general/styles }}
+        <style>
+            body {
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Administration Panel</h1>
+        <p>Welcome, {{ isset(globals.session) ? globals.session.user.username : 'guest' }}</p>
+    </body>
+</html>

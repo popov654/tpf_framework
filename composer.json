@@ -1,0 +1,35 @@
+{
+  "name": "popov654/tpf",
+  "version": "0.1.0",
+  "type": "library",
+  "description": "Ultra-compact PHP CMS for blogs and online shops",
+  "keywords": [],
+  "homepage": "https://tpf-php.com",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Alexandr Popov",
+      "email": "support@tpf-php.com"
+    },
+    {
+      "name": "TPF Framework",
+      "homepage": "https://popov654.pp.ru/tpf"
+    }
+  ],
+  "require": {
+    "php": ">=8.0",
+    "symfony/http-foundation": "^5.3|^6.4",
+    "phpmailer/phpmailer": "^6.8",
+    "ext-pdo": "*",
+    "monolog/monolog": "^3.8",
+    "jwt/php-jwt": "*",
+    "firebase/php-jwt": "^6.9"
+  },
+  "autoload": {
+    "psr-4": { "Tpf\\": "" },
+    "exclude-from-classmap": [
+      "/Tests/"
+    ]
+  },
+  "minimum-stability": "dev"
+}
