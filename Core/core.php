@@ -45,11 +45,16 @@ function doRender($template, $args = [], $suppressErrors = false): string
     } else {
         return '';
     }
+
+    return compile($content, $args, $suppressErrors);
+}
+
+function compile(string $string, $args = [], $suppressErrors = false): string{
     $replacements = [];
 
     /* Removing comments */
 
-    $content = preg_replace("/[ \t]*\\{#.*#\\}\r?\n?/", "", $content);
+    $content = preg_replace("/[ \t]*\\{#.*#\\}\r?\n?/", "", $string);
 
     /* Processing includes */
 
@@ -78,8 +83,8 @@ function doRender($template, $args = [], $suppressErrors = false): string
         $type = $m[1] ?? 'expr';
         $matches[1] = trim(preg_replace("/^".$regexp."/", "", $matches[1]));
         $str = preg_replace('/(^|\b)(\~index\~|:index)(\b|$)/', '$index', $matches[1]);
-        $str = preg_replace('/(?![\w\d\[\].\$]|\{\{ include |\[\')([[:alpha:]_]\w*)/', "\$args['\\1']", $str);
-        $str = preg_replace('/(?!\w|\])\.(\w[\w\d]*)/', "['\\1']", $str);
+        $str = preg_replace('/(?<![\w\d\[\].\$]|\{\{ include |\[\')([[:alpha:]_]\w*)/', "\$args['\\1']", $str);
+        $str = preg_replace('/(?!\w|\])\.([[:alpha:]_]\w*)/', "['\\1']", $str);
         $str = '(' . $str . ')';
         $replacements[] = [$matches[0], $str, $type];
         return $matches[0];
