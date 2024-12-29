@@ -10,14 +10,14 @@ class Logger
     public static function error(\Exception $e)
     {
         $logger = new MonologLogger('default');
-        if (!file_exists(dirname(__DIR__).'/../../var/log')) {
-            if (!file_exists(dirname(__DIR__).'/../../var')) {
-                mkdir(dirname(__DIR__).'/../../var');
+        if (!file_exists(PATH . '/var/log')) {
+            if (!file_exists(PATH . '/var')) {
+                mkdir(PATH . '/var');
             }
-            mkdir(dirname(__DIR__).'/../../var/log');
-            touch(dirname(__DIR__).'/../../var/log/error.log');
+            mkdir(PATH . '/var/log');
+            touch(PATH . '/var/log/error.log');
         }
-        $stream_handler = new StreamHandler(dirname(__DIR__).'/../../var/log/error.log');
+        $stream_handler = new StreamHandler(PATH . '/var/log/error.log');
         $logger->pushHandler($stream_handler);
         $logger->error($e->getMessage());
     }

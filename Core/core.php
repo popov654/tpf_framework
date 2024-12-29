@@ -2,10 +2,12 @@
 
 use Tpf\Database\Repository;
 
-define('PATH', dirname(__DIR__, 3));
+define('VENDOR_PATH', 'tpf/framework');
+define('LEVELS', count(explode('/', VENDOR_PATH)) + 2);
+define('PATH', dirname(__DIR__, LEVELS));
 
-require_once PATH . '/vendor/tpf/config.php';
-require_once PATH . '/vendor/tpf/Core/configure.php';
+require_once PATH . '/vendor/'. VENDOR_PATH .'/config.php';
+require_once PATH . '/vendor/'. VENDOR_PATH .'/Core/configure.php';
 
 function render($template, $args = [], $suppressErrors = false): string
 {
@@ -29,7 +31,7 @@ function render($template, $args = [], $suppressErrors = false): string
     }
 
     ob_start();
-    eval('$globals = ' . arrayToCode($TPF_REQUEST) . '; $args = ' . arrayToCode($args) . '; echo ' . "'" . $content . "'" . ';');
+    eval('$globals = ' . arrayToCode($TPF_REQUEST) . '; $params = ' . arrayToCode($_GET) . '; $args = ' . arrayToCode($args) . '; echo ' . "'" . $content . "'" . ';');
     $result = ob_get_contents();
     ob_end_clean();
 
@@ -38,8 +40,8 @@ function render($template, $args = [], $suppressErrors = false): string
 
 function doRender($template, $args = [], $suppressErrors = false): string
 {
-    if (file_exists(PATH . '/vendor/tpf/templates/' . $template . '.tpf')) {
-        $content = file_get_contents(PATH . '/vendor/tpf/templates/' . $template . '.tpf');
+    if (file_exists(PATH . '/vendor/' . VENDOR_PATH . '/templates/' . $template . '.tpf')) {
+        $content = file_get_contents(PATH . '/vendor/' . VENDOR_PATH . '/templates/' . $template . '.tpf');
     } else if (!$suppressErrors || file_exists(PATH . '/templates/' . $template . '.tpf')) {
         $content = file_get_contents(PATH . '/templates/' . $template . '.tpf');
     } else {
@@ -73,7 +75,7 @@ function compile(string $string, $args = [], $suppressErrors = false): string{
 
     /* Processing expressions */
 
-    $content = preg_replace('/\bglobals\.([[:alpha:]_]\w*)/', "\$globals['\\1']", $content);
+    $content = preg_replace('/\b(globals|params)\.([[:alpha:]_]\w*)/', "\$\\1['\\2']", $content);
 
     $replacements = [];
 
@@ -83,7 +85,7 @@ function compile(string $string, $args = [], $suppressErrors = false): string{
         $type = $m[1] ?? 'expr';
         $matches[1] = trim(preg_replace("/^".$regexp."/", "", $matches[1]));
         $str = preg_replace('/(^|\b)(\~index\~|:index)(\b|$)/', '$index', $matches[1]);
-        $str = preg_replace('/(?<![\w\d\[\].\$]|\{\{ include |\[\')([[:alpha:]_]\w*)/', "\$args['\\1']", $str);
+        $str = preg_replace('/(?<![\w\d\[\].\$\']|\{\{ include |\[\')([[:alpha:]_]\w*)(?![\w\(])/', "\$args['\\1']", $str);
         $str = preg_replace('/(?!\w|\])\.([[:alpha:]_]\w*)/', "['\\1']", $str);
         $str = '(' . $str . ')';
         $replacements[] = [$matches[0], $str, $type];
@@ -119,7 +121,7 @@ function compile(string $string, $args = [], $suppressErrors = false): string{
         }
         $pos = $start + strlen($repl);
         $content = substr($content, 0, $start) . $repl . substr($content, $end);
-        $end = $start + strlen($repl);
+        $end = $pos;
     }
     $content = substr($content, 0, $end) . str_replace("'", "\\'", substr($content, $end));
 
@@ -225,7 +227,7 @@ function createDB(array $tables): void {
 
     foreach ($tables as $table) {
         if (in_array($table, $systemEntities)) {
-            $path = realpath(dirname(__DIR__)). '/' . $table . '.php';
+            $path = realpath(dirname(__DIR__)) . '/' . $table . '.php';
             $fullClassName = 'Tpf\\Model\\' . $table;
         } else {
             $realm = explode('_', $table)[0];

@@ -10,12 +10,12 @@ function configure(): array
     global $TPF_CONFIG;
 
     $path = dirname(__DIR__);
-    if (!preg_match("/(\\\\|\\/)vendor(\\\\|\\/)tpf$/", $path)) {
-        $path .= '/vendor/tpf';
+    if (!preg_match("/(\\\\|\\/)vendor(\\\\|\\/)tpf(\\\\|\\/)framework$/", $path)) {
+        $path .= '/vendor/tpf/framework';
     }
 
-    if (!file_exists($path . '/config.php') && file_exists(dirname(__DIR__).'/config.sample.php')) {
-        copy($path . '/config.sample.php', dirname(__DIR__).'/config.php');
+    if (!file_exists($path . '/config.php') && file_exists(dirname(__DIR__) . '/config.sample.php')) {
+        copy($path . '/config.sample.php', dirname(__DIR__) . '/config.php');
     }
 
     $tables = array_merge(['User', 'Session'], getRealmEntityNames());
@@ -32,7 +32,7 @@ function configure(): array
         } catch (\Exception $e) {
             $errors[] = ['description' => 'Error while generating random secret key', 'exception' => $e];
         }
-        $config = file_get_contents(dirname(__DIR__).'/vendor/tpf/config.php');
+        $config = file_get_contents(dirname(__DIR__) . '/vendor/tpf/config.php');
         $config = preg_replace(pattern: '/(\$TPF_CONFIG = \[\n\s*)(\'secret\' => md5\(\'changeme\'\),\n)?/', replacement: "\\1'secret' => '" . $TPF_CONFIG['secret'] . "',\n", subject: $config);
 
         if ($TPF_CONFIG['db']['db_password'] == 'password' && isset($_POST['db_host']) && isset($_POST['db_user'])) {
