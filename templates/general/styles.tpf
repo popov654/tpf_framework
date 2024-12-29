@@ -1,6 +1,10 @@
         <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" />
         <script src="bootstrap/js/bootstrap.min.js"></script>
         <style>
+            h1, .h1 {
+                font-size: 2.1rem;
+                margin-bottom: 1rem;
+            }
             .form-control {
                 padding: .175rem .5rem;
                 margin: 2px 0 10px;

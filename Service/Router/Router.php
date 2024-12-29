@@ -5,6 +5,7 @@ namespace Tpf\Service\Router;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Tpf\Model\User;
 use Tpf\Service\Logger;
 
 
@@ -58,6 +59,12 @@ class Router
 
     public static function __routeAdmin(Request $request): Response
     {
+        global $TPF_CONFIG, $TPF_REQUEST;
+        if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_CLIENT) {
+            return new Response("Access restricted", 403);
+        } else if (!isset($TPF_REQUEST['session'])) {
+            return new RedirectResponse(($TPF_CONFIG['login_url'] ?? '/login') . '?redirect_uri=admin');
+        }
         return self::__route(null, null, null, null, $request);
     }
 

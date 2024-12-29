@@ -27,6 +27,9 @@ function login(Request $request): Response
     }
     $session = LoginService::login($request);
     if ($session) {
+        if ($request->get('redirect_uri')) {
+            return new RedirectResponse($request->get('redirect_uri'));
+        }
         return $session->type == 'cookie' ? new RedirectResponse($TPF_CONFIG['url_to_redirect_after_login'] ?? '/') :
             new Response('', Response::HTTP_NO_CONTENT);
     }
