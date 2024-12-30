@@ -87,3 +87,55 @@ function checkDBConnection(Request $request): Response
 
     return new JsonResponse(['result' => $result]);
 }
+
+function getEntitySchema(Request $request): Response
+{
+    if (!$request->get('type')) {
+        return new JsonResponse(['error' => 'Bad request'], 400);
+    }
+    $tables = getRealmEntityNames();
+    $type = $request->get('type');
+    if (!in_array($type, $tables)) {
+        $entities = array_values(array_filter($tables, function ($table) use ($type) {
+            return preg_match("/^" . $type . "_/", $table);
+        }));
+        if (empty($entities)) {
+            return new JsonResponse(['error' => 'Type not found'], 404);
+        }
+        $type = $entities[0];
+    }
+
+    global $dbal;
+    /** @var PDO $dbal */
+    $columns = $dbal->query("SHOW COLUMNS FROM `" . $type . "`")->fetchAll(PDO::FETCH_ASSOC);
+
+    $result = [];
+    foreach ($columns as $col) {
+        $type = 'text';
+        if (preg_match("/^int/", $col['Type'])) {
+            $type = 'int';
+        } else if (preg_match("/^float/", $col['Type'])) {
+            $type = 'float';
+        } else if (preg_match("/^tinyint/", $col['Type'])) {
+            $type = 'bool';
+        } else if (preg_match("/^json/", $col['Type'])) {
+            $type = 'array';
+        } else if (preg_match("/^date/", $col['Type'])) {
+            $type = 'date';
+        } else if (preg_match("/^time/", $col['Type'])) {
+            $type = 'time';
+        }
+        if ($type == 'text' && preg_match("/(^|_)(photo|image|picture)(_|$)/", $col['Field'])) {
+            $type = 'image';
+        }
+        if (($type == 'text' || $type == 'array') && preg_match("/(^|_)(photos|images|pictures)(_|$)/", $col['Field'])) {
+            $type = 'image_list';
+        }
+        if (in_array($col['Field'], ['author_id', 'created_at', 'modified_at'])) {
+            continue;
+        }
+        $result[$col['Field']] = $type;
+    }
+
+    return new JsonResponse($result, 200);
+}

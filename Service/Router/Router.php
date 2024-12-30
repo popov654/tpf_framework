@@ -130,6 +130,9 @@ class Router
         if ($request->getPathInfo() == '/db-check') {
             return checkDBConnection($request);
         }
+        if ($request->getPathInfo() == '/getSchema') {
+            return getEntitySchema($request);
+        }
 
         return null;
     }
