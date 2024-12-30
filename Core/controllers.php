@@ -16,8 +16,15 @@ function configureFramework(Request $request): Response
     if ($request->getMethod() == 'post' &&
         ($request->get('db_host') || $request->get('database') ||
          $request->get('db_user') || $request->get('db_password') || $firstRun)) {
-        configure();
+        try {
+            $errors = configure();
+            return new JsonResponse(['status' => 'finished', 'errors' => $errors]);
+        } catch (Exception $e) {
+            return new JsonResponse(['status' => 'fail', 'exception' => $e->getMessage()]);
+        }
     }
+
+    return new JsonResponse(['status' => 'noop']);
 }
 
 function login(Request $request): Response
@@ -76,7 +83,7 @@ function checkDBConnection(Request $request): Response
         new PDO(($request->get('db_type') ?? 'mysql') . ':dbname=' . $dbname . ';host=' . $request->get('db_host'),
             $request->get('db_user') ?? '', $request->get('db_pass') ?? '');
         $result = true;
-    } catch (\PDOException $ex) {}
+    } catch (PDOException $e) {}
 
     return new JsonResponse(['result' => $result]);
 }
