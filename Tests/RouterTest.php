@@ -3,6 +3,7 @@
 namespace Tpf\Tests;
 
 use Symfony\Component\HttpFoundation\Request;
+use Tpf\Model\User;
 use Tpf\Service\Router\Router;
 
 class RouterTest extends BasicTest
@@ -38,4 +39,17 @@ class RouterTest extends BasicTest
         //self::assertEquals('view', $TPF_REQUEST['controller']['method']);
     }
 
+    public function testGetUser()
+    {
+        global $TPF_REQUEST;
+        $TPF_REQUEST = [];
+
+        $request = Request::create('/getEntity?type=user&id=1');
+        $response = Router::route($request);
+        self::assertEquals('application/json', $response->headers->get('Content-Type'));
+        $user = json_decode($response->getContent());
+        self::assertEquals(1, $user->id);
+        self::assertEquals('admin', $user->username);
+        self::assertEquals(User::ROLE_ADMIN, $user->role);
+    }
 }

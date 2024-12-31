@@ -138,6 +138,9 @@ class Router
             }
             return getEntitySchema($request);
         }
+        if ($request->getPathInfo() == '/getEntity' || $request->getPathInfo() == '/getItem') {
+            return getEntity($request);
+        }
         if ($request->getPathInfo() == '/saveEntity' || $request->getPathInfo() == '/saveItem') {
             if (!$canEdit) {
                 return new Response('Access denied', 403);
