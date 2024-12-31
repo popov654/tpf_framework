@@ -3,6 +3,7 @@
 namespace Tpf\Service\Auth;
 
 use Symfony\Component\HttpFoundation\Request;
+use Tpf\Database\ValidationException;
 use Tpf\Model\Session;
 
 
@@ -25,8 +26,10 @@ class Auth
             $authenticator = new (__NAMESPACE__ . '\\Providers\\' . $className);
             $session = $authenticator->authenticate($request);
             if ($session) {
-                $session->user->lastLoginAt = new \DateTime();
-                $session->user->save();
+                $session->user->lastLoginAt = new \Datetime();
+                try {
+                    $session->user->save();
+                } catch (ValidationException $ignore) {}
                 return $session;
             }
         }

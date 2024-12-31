@@ -5,6 +5,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Tpf\Database\AbstractEntity;
+use Tpf\Database\Repository;
 use Tpf\Model\User;
 use Tpf\Service\Auth\LoginService;
 use Tpf\Service\UsersService;
@@ -139,6 +140,36 @@ function getEntitySchema(Request $request): Response
     }
 
     return new JsonResponse($result, 200);
+}
+
+function getEntity(Request $request): Response
+{
+    if (!$request->get('id')) {
+        return new JsonResponse(['error' => 'Bad request'], 400);
+    }
+
+    global $TPF_REQUEST, $dbal;
+
+    $tables = getRealmEntityNames();
+
+    if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
+        $tables[] = 'user';
+    }
+
+    $type = getEntityType($request->get('type'), $tables);
+    if (!$type) {
+        return new JsonResponse(['error' => 'Unknown type'], 400);
+    }
+    $className = getFullClassNameByType($type);
+
+    $repository = new Repository($className);
+    $entity = $repository->fetchOne($request->get('id'));
+
+    if (!$entity) {
+        return new JsonResponse(['error' => 'Element not found'], 404);
+    }
+
+    return new JsonResponse($entity, 200);
 }
 
 function saveEntity(Request $request): Response
