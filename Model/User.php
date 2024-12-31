@@ -39,12 +39,15 @@ class User extends AbstractEntity
     const ROLE_ADMIN = 1;
     const ROLE_EDITOR = 2;
 
+    const MIN_USERNAME_LENGTH = 3;
+
     public function __construct()
     {
         parent::__construct();
         $this->firstname = '';
         $this->lastname = '';
         $this->role = self::ROLE_CLIENT;
+        $this->registeredAt = new \Datetime();
     }
 
     public function getFullName(): string
@@ -55,6 +58,12 @@ class User extends AbstractEntity
     public function getRoleName(): string
     {
         return $this->role == 1 ? 'Admin' : ($this->role == 2 ? 'Manager' : 'User');
+    }
+
+    public function isValid(): bool
+    {
+        return strlen($this->username) >= self::MIN_USERNAME_LENGTH &&
+            preg_match("/^[a-z][a-z\d~._-]*[a-z\d]@[a-z][a-z\d~._-]*[a-z\d]$/", $this->email);
     }
 
 }
