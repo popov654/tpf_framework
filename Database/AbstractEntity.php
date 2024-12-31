@@ -30,8 +30,14 @@ abstract class AbstractEntity
         return (new Repository(get_called_class()))->fetchOne($id);
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function save(): void
     {
+        if ($this->validate && !$this->isValid()) {
+            throw new ValidationException('Data validation error');
+        }
         (new Repository(get_class($this)))->save($this);
     }
 
@@ -39,4 +45,11 @@ abstract class AbstractEntity
     {
         (new Repository(get_class($this)))->delete($this);
     }
+
+    public function isValid(): bool
+    {
+        return true;
+    }
+
+    public bool $validate = true;
 }
