@@ -42,6 +42,7 @@ class Repository extends Query
 
     /**
      * @method bool save(object $entity)
+     * @throws \Exception
      */
     public function save($entity)
     {
@@ -192,6 +193,7 @@ class Repository extends Query
 
     /**
      * @method array getColumnsByClass(string $className)
+     * @throws ORMException
      */
     public static function getColumnsByClass($className): array
     {
@@ -244,7 +246,7 @@ class Repository extends Query
                         break;
 
                     default:
-                        throw new \Exception("Unknown property type {$property['type']}");
+                        throw new ORMException("Unknown property type {$property['type']}");
                         break;
                 }
 
