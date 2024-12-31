@@ -2,6 +2,9 @@
 
 namespace Tpf\Database;
 
+use Tpf\Model\User;
+use Tpf\Service\Auth\PasswordHasher;
+
 abstract class AbstractEntity
 {
 
@@ -22,6 +25,53 @@ abstract class AbstractEntity
             } else if (preg_match("/(int|float)/", $property->getType()->getName())) {
                 $property->setValue($this,0);
             }
+        }
+    }
+
+    public static function fromJSON(?string $data): self
+    {
+        $class = get_called_class();
+        $obj = new $class;
+
+        if ($data) {
+            $data = json_decode($data, true);
+            self::fillFromArray($obj, $data);
+        }
+
+        return $obj;
+    }
+
+    public static function fillFromArray(object $entity, array $data): void
+    {
+        $reflection = new \ReflectionClass(get_class($entity));
+        $properties = $reflection->getProperties();
+
+        $props = [];
+        foreach ($properties as $property) {
+            $props[$property->getName()] = $property->getType()->getName();
+        }
+
+        foreach ($data as $key => $value) {
+            if (!isset($props[$key])) {
+                continue;
+            }
+            if ($props[$key] == 'string') {
+                $entity->$key = (string) $value;
+            } else if ($props[$key] == 'int') {
+                $entity->$key = (int) $value;
+            } else if ($props[$key] == 'float') {
+                $entity->$key = (float) $value;
+            } else if ($props[$key] == 'bool') {
+                $entity->$key = (bool) $value;
+            } else {
+                $entity->$key = $value;
+            }
+            if (get_class($entity) == User::class && $key == 'password') {
+                PasswordHasher::hashPassword($entity);
+            }
+        }
+        if (get_class($entity) == User::class && !isset($data['registeredAt'])) {
+            $entity->registeredAt = new \Datetime();
         }
     }
 

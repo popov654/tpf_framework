@@ -50,4 +50,24 @@ class ORMTest extends BasicTest
 
         $dbal->exec('ALTER TABLE `user` AUTO_INCREMENT=0');
     }
+
+    public function testFromArray()
+    {
+        $data = [
+            'username' => 'test',
+            'password' => 'test',
+            'firstName' => 'Test',
+            'lastName' => '',
+            'isActive' => true,
+            'registeredAt' => new \Datetime()
+        ];
+
+        /** @var User $user */
+        $user = User::fromArray($data);
+        self::assertNotNull($user);
+        self::assertNull($user->id);
+        self::assertEquals('test', $user->username);
+        self::assertEquals('test', $user->password);
+        self::assertTrue($user->isActive);
+    }
 }

@@ -114,6 +114,8 @@ class Router
 
     public static function processDefaultRoutes(Request $request): ?Response
     {
+        global $TPF_REQUEST;
+        $canEdit = isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role != User::ROLE_CLIENT;
         if ($request->getPathInfo() == ($TPF_CONFIG['auth_url'] ?? '/login')) {
             return login($request);
         }
@@ -130,8 +132,17 @@ class Router
         if ($request->getPathInfo() == '/db-check') {
             return checkDBConnection($request);
         }
-        if ($request->getPathInfo() == '/getSchema') {
+        if ($request->getPathInfo() == '/getSchema' || $request->getPathInfo() == '/getEntitySchema') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
             return getEntitySchema($request);
+        }
+        if ($request->getPathInfo() == '/saveEntity' || $request->getPathInfo() == '/saveItem') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            return saveEntity($request);
         }
 
         return null;

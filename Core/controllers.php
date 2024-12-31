@@ -4,6 +4,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Tpf\Database\AbstractEntity;
 use Tpf\Model\User;
 use Tpf\Service\Auth\LoginService;
 use Tpf\Service\UsersService;
@@ -93,7 +94,7 @@ function getEntitySchema(Request $request): Response
     if (!$request->get('type')) {
         return new JsonResponse(['error' => 'Bad request'], 400);
     }
-    $tables = getRealmEntityNames();
+    $tables = array_merge(['user'], getRealmEntityNames());
     $type = $request->get('type');
     if (!in_array($type, $tables)) {
         $entities = array_values(array_filter($tables, function ($table) use ($type) {
@@ -138,4 +139,80 @@ function getEntitySchema(Request $request): Response
     }
 
     return new JsonResponse($result, 200);
+}
+
+function saveEntity(Request $request): Response
+{
+    global $TPF_REQUEST;
+
+    if (!$request->get('type')) {
+        return new JsonResponse(['error' => 'Bad request'], 400);
+    }
+
+    $tables = getRealmEntityNames();
+
+    if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
+        $tables[] = 'user';
+    }
+
+    $type = getEntityType($request->get('type'), $tables);
+    if (!$type) {
+        return new JsonResponse(['error' => 'Unknown type'], 400);
+    }
+    $className = getFullClassNameByType($type);
+
+    try {
+        $data = json_decode($request->getContent(), true);
+
+        if (!in_array(strtolower($type), $tables)) {
+            return new JsonResponse(['error' => 'Unknown type'], 400);
+        }
+
+        if (!$request->get('id')) {
+            $entity = new $className();
+        } else {
+            $entity = $className::load($request->get('id'));
+        }
+
+        if (!isset($data['modifiedAt'])) {
+            $data['modifiedAt'] = new \DateTime();
+        }
+        AbstractEntity::fillFromArray($entity, $data);
+        $entity->save();
+
+        return new JsonResponse(['result' => 'ok'], 200);
+    } catch (Exception $e) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    }
+}
+
+function getEntityType(string $type, array $tables): ?string
+{
+    if (!in_array($type, $tables)) {
+        $entities = array_values(array_filter($tables, function ($table) use ($type) {
+            return preg_match("/^" . $type . "_/", $table);
+        }));
+        if (empty($entities)) {
+            return null;
+        }
+        $type = $entities[0];
+    }
+
+    return $type;
+}
+
+function getFullClassNameByType(string $type): string
+{
+    $class = ucfirst(preg_replace("/^(([a-z0-9])+_)*/", "", $type));
+    if ($class != 'User') {
+        $path = ucfirst(preg_replace_callback("/_[a-z]/", function ($match) {
+            return '/' . strtoupper($match[0][1]);
+        }, $type));
+        require_once PATH . '/src/Model/' . $path . '.php';
+        $className = 'App\\Model\\' . str_replace('/', '\\', $path);
+    } else {
+        $className = User::class;
+    }
+
+    return $className;
 }
