@@ -96,53 +96,16 @@ function getEntitySchema(Request $request): Response
         return new JsonResponse(['error' => 'Bad request'], 400);
     }
     $tables = array_merge(['user'], getRealmEntityNames());
-    $type = $request->get('type');
-    if (!in_array($type, $tables)) {
-        $entities = array_values(array_filter($tables, function ($table) use ($type) {
-            return preg_match("/^" . $type . "_/", $table);
-        }));
-        if (empty($entities)) {
-            return new JsonResponse(['error' => 'Type not found'], 404);
-        }
-        $type = $entities[0];
+    $type = getEntityType($request->get('type'), $tables);
+    if (!$type) {
+        return new JsonResponse(['error' => 'Unknown type'], 400);
     }
 
-    global $dbal;
-    /** @var PDO $dbal */
-    $columns = $dbal->query("SHOW COLUMNS FROM `" . $type . "`")->fetchAll(PDO::FETCH_ASSOC);
+    $className = getFullClassNameByType($type);
 
-    $result = [];
-    foreach ($columns as $col) {
-        $type = 'text';
-        if (preg_match("/^int/", $col['Type'])) {
-            $type = 'int';
-        } else if (preg_match("/^float/", $col['Type'])) {
-            $type = 'float';
-        } else if (preg_match("/^tinyint/", $col['Type'])) {
-            $type = 'bool';
-        } else if (preg_match("/^json/", $col['Type'])) {
-            $type = 'array';
-        } else if (preg_match("/^date/", $col['Type'])) {
-            $type = 'date';
-        } else if (preg_match("/^time/", $col['Type'])) {
-            $type = 'time';
-        }
-        if ($type == 'text' && preg_match("/(^|_)(photo|image|picture)(_|$)/", $col['Field'])) {
-            $type = 'image';
-        }
-        if (($type == 'text' || $type == 'array') && preg_match("/(^|_)(photos|images|pictures)(_|$)/", $col['Field'])) {
-            $type = 'image_list';
-        }
-        if (in_array($col['Field'], ['author_id', 'created_at', 'modified_at'])) {
-            continue;
-        }
-        $field = preg_replace_callback("/_[a-z]/", function ($matches) {
-            return strtoupper($matches[0][1]);
-        }, $col['Field']);
-        $result[$field] = $type;
-    }
+    $schema = $className::getSchema($type);
 
-    return new JsonResponse($result, 200);
+    return new JsonResponse($schema, 200);
 }
 
 function getEntities(Request $request): Response
@@ -159,7 +122,7 @@ function getEntities(Request $request): Response
     if (!$type) {
         return new JsonResponse(['error' => 'Unknown type'], 400);
     }
-    
+
     $className = getFullClassNameByType($type);
 
     $repository = new Repository($className);
@@ -167,7 +130,12 @@ function getEntities(Request $request): Response
     $repository->setLimit($request->get('count') ?? 25);
     $entities = $repository->fetch();
 
-    return new JsonResponse($entities, 200);
+    $fields = ['id', 'name', 'image', 'createdAt', 'modifiedAt'];
+    foreach ($entities as $entity) {
+        $result[] = $entity->getFields($fields);
+    }
+
+    return new JsonResponse($result, 200);
 }
 
 function getEntity(Request $request): Response
@@ -197,7 +165,9 @@ function getEntity(Request $request): Response
         return new JsonResponse(['error' => 'Element not found'], 404);
     }
 
-    return new JsonResponse($entity, 200);
+    $fields = array_keys($className::getSchema($type));
+
+    return new JsonResponse($entity->getFields($fields), 200);
 }
 
 function saveEntity(Request $request): Response

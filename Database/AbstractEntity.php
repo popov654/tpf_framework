@@ -75,6 +75,59 @@ abstract class AbstractEntity
         }
     }
 
+    public function getFields(array $fields): array
+    {
+        $data = [];
+        foreach ($fields as $field) {
+            if (!isset($this->$field)) continue;
+            $data[$field] = $this->$field;
+            if ($data[$field] instanceof \DateTime) {
+                $data[$field] = $data[$field]->format('Y-m-d\TH:i:s');
+            }
+        }
+        return $data;
+    }
+
+    public static function getSchema($type): array
+    {
+        global $dbal;
+        /** @var \PDO $dbal */
+        $columns = $dbal->query("SHOW COLUMNS FROM `" . $type . "`")->fetchAll(\PDO::FETCH_ASSOC);
+
+        $result = [];
+        foreach ($columns as $col) {
+            $type = 'text';
+            if (preg_match("/^int/", $col['Type'])) {
+                $type = 'int';
+            } else if (preg_match("/^float/", $col['Type'])) {
+                $type = 'float';
+            } else if (preg_match("/^tinyint/", $col['Type'])) {
+                $type = 'bool';
+            } else if (preg_match("/^json/", $col['Type'])) {
+                $type = 'array';
+            } else if (preg_match("/^date/", $col['Type'])) {
+                $type = 'date';
+            } else if (preg_match("/^time/", $col['Type'])) {
+                $type = 'time';
+            }
+            if ($type == 'text' && preg_match("/(^|_)(photo|image|picture)(_|$)/", $col['Field'])) {
+                $type = 'image';
+            }
+            if (($type == 'text' || $type == 'array') && preg_match("/(^|_)(photos|images|pictures)(_|$)/", $col['Field'])) {
+                $type = 'image_list';
+            }
+            if (in_array($col['Field'], ['author_id', 'created_at', 'modified_at'])) {
+                continue;
+            }
+            $field = preg_replace_callback("/_[a-z]/", function ($matches) {
+                return strtoupper($matches[0][1]);
+            }, $col['Field']);
+            $result[$field] = $type;
+        }
+
+        return $result;
+    }
+
     public static function load($id, $loadEmbedded = false, $maxDepth = 3): ?object
     {
         return (new Repository(get_called_class()))->fetchOne($id);
