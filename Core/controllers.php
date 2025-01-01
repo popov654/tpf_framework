@@ -136,7 +136,10 @@ function getEntitySchema(Request $request): Response
         if (in_array($col['Field'], ['author_id', 'created_at', 'modified_at'])) {
             continue;
         }
-        $result[$col['Field']] = $type;
+        $field = preg_replace_callback("/_[a-z]/", function ($matches) {
+            return strtoupper($matches[0][1]);
+        }, $col['Field']);
+        $result[$field] = $type;
     }
 
     return new JsonResponse($result, 200);
