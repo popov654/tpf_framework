@@ -150,6 +150,12 @@ class Router
             }
             return saveEntity($request);
         }
+        if ($request->getPathInfo() == '/upload' && $request->getMethod() == 'POST') {
+            return uploadFile($request);
+        }
+        if ($request->getPathInfo() == '/removeFile' && $request->getMethod() == 'POST') {
+            return removeFile($request);
+        }
 
         return null;
     }
