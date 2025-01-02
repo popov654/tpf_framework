@@ -245,3 +245,43 @@ function getFullClassNameByType(string $type): string
 
     return $className;
 }
+
+const MAX_UPLOAD_SIZE = 1024*50*1024;
+
+function uploadFile(Request $request): Response
+{
+    global $TPF_CONFIG;
+
+    $upload_dir = ($TPF_CONFIG['upload_dir'] ?? '/media/');
+
+    $file = $request->files->get('file');
+    $name = $file->getClientOriginalName();
+
+    if ($name == ".htaccess" || preg_match("/\.php[^\.]*$/", $name)) exit();
+
+    if ($file->getSize() > MAX_UPLOAD_SIZE) {
+        return new JsonResponse(['error' => 'Upload max size exceeeded']);
+    }
+    $extension = substr($name, strrpos($name, "."));
+    $uname = uniqid().$extension;
+    $dir = in_array($extension, ['.jpg', '.png', '.jpeg', '.gif', '.bmp', '.tif', '.tiff', '.webp']) ? 'images' :
+            (in_array($extension, ['.avi', '.mp4', '.mpg', '.m4v', '.mov', '.mkv', '.flv']) ? 'videos' : 'files');
+    $file->move(PATH . '/public' . $upload_dir . $dir, $uname);
+
+    return new JsonResponse(['status' => 'ok', 'url' => $upload_dir . $dir . '/' . $uname]);
+}
+
+function removeFile(Request $request): Response
+{
+    global $TPF_CONFIG;
+
+    $upload_dir = ($TPF_CONFIG['upload_dir'] ?? '/media/');
+
+    if (file_exists(PATH . '/public' . $upload_dir . $request->get('file'))) {
+        unlink(PATH . '/public' . $upload_dir . $request->get('file'));
+    } else {
+        return new JsonResponse(['error' => 'File not found']);
+    }
+
+    return new JsonResponse(['status' => 'ok']);
+}
