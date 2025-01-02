@@ -116,6 +116,9 @@ abstract class AbstractEntity
             if (($type == 'text' || $type == 'array') && preg_match("/(^|_)(photos|images|pictures)(_|$)/", $col['Field'])) {
                 $type = 'image_list';
             }
+            if ($col['Field'] == 'name' || $col['Field'] == 'title') {
+                $type = 'short_text';
+            }
             if (in_array($col['Field'], ['author_id', 'created_at', 'modified_at'])) {
                 continue;
             }
