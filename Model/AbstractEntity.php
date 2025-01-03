@@ -132,6 +132,24 @@ abstract class AbstractEntity
         return $result;
     }
 
+    public function getComments(): array
+    {
+        $type = get_class($this);
+        $result = [];
+        if (!preg_match("/Entity$/", $type)) {
+            $parts = explode('\\', $type);
+            $type = strtolower(array_pop($parts));
+            for ($i = count($parts)-1; $i >= 0; $i--) {
+                if ($parts[$i] == 'Model') break;
+                $type = $parts[$i] . '_' . $type;
+            }
+            $repository = new Repository(Comment::class);
+            $result = $repository->whereEq(['type' => $type, 'entity_id' => $this->id])->fetch();
+        }
+
+        return $result;
+    }
+
     public static function load($id, $loadEmbedded = false, $maxDepth = 3): ?object
     {
         return (new Repository(get_called_class()))->fetchOne($id);

@@ -175,6 +175,49 @@ function getEntity(Request $request): Response
     return new JsonResponse($entity->getFields($fields), 200);
 }
 
+function getEntityComments(Request $request): Response
+{
+    if (!$request->get('id')) {
+        return new JsonResponse(['error' => 'Bad request'], 400);
+    }
+
+    global $TPF_REQUEST, $dbal;
+
+    $tables = getRealmEntityNames();
+
+    if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
+        $tables[] = 'user';
+    }
+
+    $type = getEntityType($request->get('type'), $tables);
+    if (!$type) {
+        return new JsonResponse(['error' => 'Unknown type'], 400);
+    }
+    $className = getFullClassNameByType($type);
+
+    $repository = new Repository($className);
+    $entity = $repository->fetchOne($request->get('id'));
+
+    if (!$entity) {
+        return new JsonResponse(['error' => 'Element not found'], 404);
+    }
+
+    $commentsRepository = new Repository(Comment::class);
+    $commentsRepository->setOffset($request->get('offset') ?? 0);
+    $commentsRepository->setLimit($request->get('count') ?? 100);
+    $comments = $commentsRepository->whereEq(['type' => $type, 'entity_id' => $entity->id])->fetch();
+
+    $fields = array_keys($className::getSchema('comment'));
+
+    $result = [];
+
+    foreach ($comments as $comment) {
+        $result[] = $comment->getFields($fields);
+    }
+
+    return new JsonResponse($result, 200);
+}
+
 function saveEntity(Request $request): Response
 {
     global $TPF_REQUEST;
