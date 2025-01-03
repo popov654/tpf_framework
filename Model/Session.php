@@ -2,7 +2,6 @@
 
 namespace Tpf\Model;
 
-use Tpf\Database\AbstractEntity;
 use Tpf\Database\Repository;
 
 class Session extends AbstractEntity

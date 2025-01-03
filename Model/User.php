@@ -2,8 +2,7 @@
 
 namespace Tpf\Model;
 
-use Tpf\Database\AbstractEntity;
-
+use Tpf\Database\Repository;
 
 class User extends AbstractEntity
 {

@@ -4,6 +4,7 @@ namespace Tpf\Database;
 
 use DateTime;
 use ReflectionProperty;
+use Tpf\Model\AbstractEntity;
 use Tpf\Service\Logger;
 
 
