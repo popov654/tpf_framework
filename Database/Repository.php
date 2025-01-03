@@ -9,9 +9,21 @@ class Repository extends Query
     protected const PRIMARY_COLUMN_KEY = "id";
 
     /**
+     * @method array filterByCategory(int $categoryId, ?bool $excludeSubcategories = false)
+     */
+    public function filterByCategory(int $categoryId, ?bool $excludeSubcategories = false)
+    {
+        if (!$excludeSubcategories) {
+            return $this->where(["`categories` REGEXP '(\\\\[|,)\"?". $categoryId ."\"?(,|\\\\])'"]);
+        } else {
+            return $this->where(["`categories` REGEXP '(\\\\[|,)\"?". $categoryId ."\"?\\\\]'"]);
+        }
+    }
+
+    /**
      * @method object|null fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3)
      */
-    public function fetchOne(int $id, $loadEmbedded = false, $maxDepth = 3)
+    public function fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3)
     {
         $query = clone $this;
         $query
@@ -220,7 +232,7 @@ class Repository extends Query
                         break;
 
                     case "int":
-                        $columnFull = "`$name` INTEGER(11) NOT NULL";
+                        $columnFull = "`$name` INTEGER(11) NOT NULL DEFAULT 0";
                         if ($name == static::PRIMARY_COLUMN_KEY)
                             $columnFull .= " AUTO_INCREMENT";
                         break;

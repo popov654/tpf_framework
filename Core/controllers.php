@@ -129,9 +129,13 @@ function getEntities(Request $request): Response
     $repository = new Repository($className);
     $repository->setOffset($request->get('offset') ?? 0);
     $repository->setLimit($request->get('count') ?? 25);
+    if ($request->get('category')) {
+        $repository->filterByCategory($request->get('category'), $request->get('excludeSubCats') !== null);
+    }
     $entities = $repository->fetch();
 
     $fields = ['id', 'name', 'image', 'createdAt', 'modifiedAt'];
+    $result = [];
     foreach ($entities as $entity) {
         $result[] = $entity->getFields($fields);
     }
