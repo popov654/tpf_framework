@@ -4,8 +4,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Tpf\Database\AbstractEntity;
+
 use Tpf\Database\Repository;
+use Tpf\Model\AbstractEntity;
 use Tpf\Model\User;
 use Tpf\Service\Auth\LoginService;
 use Tpf\Service\UsersService;

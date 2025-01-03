@@ -1,7 +1,8 @@
 <?php
 
-namespace Tpf\Database;
+namespace Tpf\Model;
 
+use Tpf\Database\Repository;
 use Tpf\Model\User;
 use Tpf\Service\Auth\PasswordHasher;
 
