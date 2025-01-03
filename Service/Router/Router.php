@@ -159,6 +159,9 @@ class Router
         if ($request->getPathInfo() == '/removeFile' && $request->getMethod() == 'POST') {
             return removeFile($request);
         }
+        if ($request->getPathInfo() == '/removeFiles' && $request->getMethod() == 'POST') {
+            return removeFiles($request);
+        }
 
         return null;
     }

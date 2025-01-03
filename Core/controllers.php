@@ -333,3 +333,20 @@ function removeFile(Request $request): Response
 
     return new JsonResponse(['status' => 'ok']);
 }
+
+function removeFiles(Request $request): Response
+{
+    global $TPF_CONFIG;
+
+    $upload_dir = ($TPF_CONFIG['upload_dir'] ?? '/media/');
+
+    $files = json_decode($request->get('files'), true);
+
+    foreach ($files as $file) {
+        if (file_exists(PATH . '/public' . $upload_dir . $file)) {
+            unlink(PATH . '/public' . $upload_dir . $file);
+        }
+    }
+
+    return new JsonResponse(['status' => 'ok']);
+}

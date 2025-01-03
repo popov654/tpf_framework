@@ -69,6 +69,12 @@ class Repository extends Query
             if ($data[ $column['name'] ] instanceof \Datetime) {
                 $data[ $column['name'] ] = $data[ $column['name'] ]->format('Y-m-d H:i:s');
             }
+            if (is_array($data[ $column['name'] ])) {
+                $data[ $column['name'] ] = json_encode($data[ $column['name'] ]);
+            }
+            if (is_bool($data[ $column['name'] ])) {
+                $data[ $column['name'] ] = (int) $data[ $column['name'] ];
+            }
         });
 
         if (empty($data["id"])) {
