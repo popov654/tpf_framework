@@ -3,8 +3,10 @@
 namespace Tpf\Tests;
 
 use Symfony\Component\HttpFoundation\Request;
-use Tpf\Database\AbstractEntity;
 use Tpf\Database\Repository;
+use Tpf\Model\AbstractEntity;
+use Tpf\Model\Category;
+use Tpf\Model\Comment;
 use Tpf\Model\Session;
 use Tpf\Model\User;
 use Tpf\Service\Router\Router;
@@ -44,6 +46,7 @@ class Utils
                 'name' => 'First blog entry',
                 'text' => 'Content 1',
                 'image' => 'website-3483020_640.png',
+                'categories' => [1],
                 'author_id' => 1,
                 'is_active' => 1,
                 'is_deleted' => 0,
@@ -54,6 +57,8 @@ class Utils
                 'name' => 'Second blog entry',
                 'text' => 'Content 2',
                 'image' => 'website-3374825_1920.jpg',
+                'categories' => [],
+                'tags' => ['tag'],
                 'author_id' => 1,
                 'is_active' => 1,
                 'is_deleted' => 0,
@@ -67,6 +72,81 @@ class Utils
             $post = new App\Model\Blog\Post();
             AbstractEntity::fillFromArray($post, $postData);
             $post->save();
+        }
+
+        self::seedCategories();
+        self::seedComments();
+    }
+
+    private static function seedCategories()
+    {
+        $time = new \Datetime();
+        $categories = [
+            [
+                'type' => 'blog_post',
+                'name' => 'Test category',
+                'parent' => 0,
+                'isActive' => 1,
+                'createdAt' => $time,
+                'modifiedAt' => $time
+            ],
+            [
+                'type' => 'blog_post',
+                'name' => 'Nested category 1',
+                'parent' => 0,
+                'isActive' => 1,
+                'createdAt' => $time,
+                'modifiedAt' => $time
+            ],
+            [
+                'type' => 'blog_post',
+                'name' => 'Nested category 2',
+                'parent' => 0,
+                'isActive' => 1,
+                'createdAt' => $time,
+                'modifiedAt' => $time
+            ]
+        ];
+
+        $parentId = 0;
+
+        foreach ($categories as $category) {
+            $category = new Category();
+            AbstractEntity::fillFromArray($category, $category);
+            $category->parent = $parentId;
+            $category->save();
+            if ($parentId == 0) {
+                $parentId = $category->id;
+            }
+        }
+    }
+
+    private static function seedComments()
+    {
+        $time = new \Datetime();
+        $comments = [
+            [
+                'type' => 'blog_post',
+                'entityId' => 1,
+                'text' => 'Comment 1',
+                'authorId' => 1,
+                'createdAt' => $time,
+                'modifiedAt' => $time
+            ],
+            [
+                'type' => 'blog_post',
+                'entityId' => 1,
+                'text' => 'Comment 2',
+                'authorId' => 1,
+                'createdAt' => $time,
+                'modifiedAt' => $time
+            ]
+        ];
+
+        foreach ($comments as $commentData) {
+            $comment = new Comment();
+            AbstractEntity::fillFromArray($comment, $commentData);
+            $comment->save();
         }
     }
 }
