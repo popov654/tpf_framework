@@ -8,6 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Tpf\Database\Repository;
 use Tpf\Model\AbstractEntity;
 use Tpf\Model\User;
+use Tpf\Model\Category;
 use Tpf\Service\Auth\LoginService;
 use Tpf\Service\UsersService;
 
@@ -218,6 +219,44 @@ function getEntityComments(Request $request): Response
     return new JsonResponse($result, 200);
 }
 
+function getCategoriesByType(Request $request): Response
+{
+    if (!$request->get('type')) {
+        return new JsonResponse(['error' => 'Bad request'], 400);
+    }
+    $repository = new Repository(Category::class);
+    $categories = $repository->whereEq(['type' => $request->get('type')])->fetch();
+
+    $result = [];
+
+    foreach ($categories as $category) {
+        $result[] = $category->getFields(array_keys(AbstractEntity::getSchema('category')));
+    }
+
+    foreach ($result as &$category) {
+        $category['id_path'] = [$category['id']];
+        $category['path'] = [$category['name']];
+
+        if ($category['parent'] > 0) {
+            $current = $category;
+            while ($current != null && $current['parent'] != 0) {
+                $current = array_values(array_filter($result, function($item) use (&$current) {
+                    return $item['id'] == $current['parent'];
+                }));
+                if (!empty($current)) {
+                    $current = $current[0];
+                    array_unshift($category['id_path'], $current['id']);
+                    array_unshift($category['path'], $current['name']);
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    return new JsonResponse($result, 200);
+}
+
 function saveEntity(Request $request): Response
 {
     global $TPF_REQUEST;
@@ -263,36 +302,7 @@ function saveEntity(Request $request): Response
     }
 }
 
-function getEntityType(string $type, array $tables): ?string
-{
-    if (!in_array($type, $tables)) {
-        $entities = array_values(array_filter($tables, function ($table) use ($type) {
-            return preg_match("/^" . $type . "_/", $table);
-        }));
-        if (empty($entities)) {
-            return null;
-        }
-        $type = $entities[0];
-    }
 
-    return $type;
-}
-
-function getFullClassNameByType(string $type): string
-{
-    $class = ucfirst(preg_replace("/^(([a-z0-9])+_)*/", "", $type));
-    if ($class != 'User') {
-        $path = ucfirst(preg_replace_callback("/_[a-z]/", function ($match) {
-            return '/' . strtoupper($match[0][1]);
-        }, $type));
-        require_once PATH . '/src/Model/' . $path . '.php';
-        $className = 'App\\Model\\' . str_replace('/', '\\', $path);
-    } else {
-        $className = User::class;
-    }
-
-    return $className;
-}
 
 const MAX_UPLOAD_SIZE = 1024*50*1024;
 

@@ -1,6 +1,7 @@
 <?php
 
 use Tpf\Database\Repository;
+use Tpf\Model\User;
 
 define('VENDOR_PATH', 'tpf/framework');
 define('LEVELS', count(explode('/', VENDOR_PATH)) + 2);
@@ -267,4 +268,35 @@ function getRealmEntityNames(): array {
         $result[] = $name . '_' . ($realm['item'] ?? 'item');
     }
     return $result;
+}
+
+function getEntityType(string $type, array $tables): ?string
+{
+    if (!in_array($type, $tables)) {
+        $entities = array_values(array_filter($tables, function ($table) use ($type) {
+            return preg_match("/^" . $type . "_/", $table);
+        }));
+        if (empty($entities)) {
+            return null;
+        }
+        $type = $entities[0];
+    }
+
+    return $type;
+}
+
+function getFullClassNameByType(string $type): string
+{
+    $class = ucfirst(preg_replace("/^(([a-z0-9])+_)*/", "", $type));
+    if ($class != 'User') {
+        $path = ucfirst(preg_replace_callback("/_[a-z]/", function ($match) {
+            return '/' . strtoupper($match[0][1]);
+        }, $type));
+        require_once PATH . '/src/Model/' . $path . '.php';
+        $className = 'App\\Model\\' . str_replace('/', '\\', $path);
+    } else {
+        $className = User::class;
+    }
+
+    return $className;
 }
