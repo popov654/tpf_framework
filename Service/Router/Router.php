@@ -144,6 +144,9 @@ class Router
         if ($request->getPathInfo() == '/getComments' || $request->getPathInfo() == '/getItemComments') {
             return getEntityComments($request);
         }
+        if ($request->getPathInfo() == '/getCategories') {
+            return getCategoriesByType($request);
+        }
         if ($request->getPathInfo() == '/getEntities' || $request->getPathInfo() == '/getItems') {
             return getEntities($request);
         }
