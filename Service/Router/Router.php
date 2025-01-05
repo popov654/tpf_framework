@@ -63,7 +63,7 @@ class Router
         if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_CLIENT) {
             return new Response("Access restricted", 403);
         } else if (!isset($TPF_REQUEST['session'])) {
-            return new RedirectResponse(($TPF_CONFIG['login_url'] ?? '/login') . '?redirect_uri=admin');
+            return new RedirectResponse(($TPF_CONFIG['auth_url'] ?? '/login') . '?redirect_uri=admin');
         }
         return self::__route(null, null, null, null, $request);
     }

@@ -64,7 +64,7 @@ class AuthTest extends BasicTest
         $TPF_REQUEST['session']  = Auth::authenticate($request);
         $response = Router::route($request);
 
-        /** @var PDO $dbal */
+        /** @var \PDO $dbal */
         $dbal->exec('ALTER TABLE `'. $TPF_CONFIG['db']['database'] .'`.`session` AUTO_INCREMENT=0;');
 
         self::assertTrue($response instanceof RedirectResponse);

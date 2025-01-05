@@ -26,7 +26,7 @@ class LoginService
             return null;
         } else {
             try {
-                $data = json_decode(file_get_contents("php://input"));
+                $data = json_decode($request->getContent());
             } catch (\Exception $e) {
                 return null;
             }

@@ -45,7 +45,7 @@ class Query
             return $this;
         }
         foreach ($args as $str) {
-            $this->where .= (strlen($this->where) > 0 ? " AND " : "") . "(" . $str . ")";
+            $this->where .= (!empty($this->where) ? " AND " : "") . "(" . $str . ")";
         }
 
         return $this;
@@ -56,7 +56,7 @@ class Query
         if (empty($args)) {
             return $this;
         }
-        if (strlen($this->where) == 0) {
+        if (empty($this->where)) {
             return $this->where($args);
         }
         $this->where = "(" . $this->where . ") OR ";
