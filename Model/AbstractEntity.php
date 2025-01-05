@@ -120,9 +120,6 @@ abstract class AbstractEntity
             if ($col['Field'] == 'name' || $col['Field'] == 'title') {
                 $type = 'short_text';
             }
-            if (in_array($col['Field'], ['author_id', 'created_at', 'modified_at'])) {
-                continue;
-            }
             $field = preg_replace_callback("/_[a-z]/", function ($matches) {
                 return strtoupper($matches[0][1]);
             }, $col['Field']);
@@ -168,7 +165,12 @@ abstract class AbstractEntity
 
     public function delete(): void
     {
-        (new Repository(get_class($this)))->delete($this);
+        (new Repository(get_class($this)))->remove($this);
+    }
+
+    public function remove(): void
+    {
+        $this->delete();
     }
 
     public function isValid(): bool
