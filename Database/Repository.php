@@ -21,6 +21,22 @@ class Repository extends Query
     }
 
     /**
+     * @method array filterByTags(array $tags, ?bool $findAny = false)
+     */
+    public function filterByTags(array $tags, ?bool $findAny = false)
+    {
+        foreach ($tags as $tag) {
+            if (!$findAny) {
+                $this->andWhere(["`tags` REGEXP '(\\\\[|,)\"". self::mb_escape($tag) ."\"(,|\\\\])'"]);
+            } else {
+                $this->orWhere(["`tags` REGEXP '(\\\\[|,)\"". self::mb_escape($tag) ."\"(,|\\\\])'"]);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * @method object|null fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3)
      */
     public function fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3)

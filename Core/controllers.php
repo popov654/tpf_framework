@@ -133,9 +133,12 @@ function getEntities(Request $request): Response
     if ($request->get('category')) {
         $repository->filterByCategory($request->get('category'), $request->get('excludeSubCats') !== null);
     }
+    if ($request->get('tags')) {
+        $repository->filterByTags(json_decode($request->get('tags'), true), $request->get('findTag') == 'any');
+    }
     $entities = $repository->fetch();
 
-    $fields = ['id', 'name', 'image', 'createdAt', 'modifiedAt'];
+    $fields = ['id', 'name', 'image', 'categories', 'tags', 'createdAt', 'modifiedAt'];
     $result = [];
     foreach ($entities as $entity) {
         $result[] = $entity->getFields($fields);
