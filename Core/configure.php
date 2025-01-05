@@ -5,17 +5,14 @@ use Tpf\Model\User;
 use Tpf\Service\Auth\PasswordHasher;
 
 
+define('CONFIG_PATH', PATH . '/config/config.php');
+
 function configure(): array
 {
     global $TPF_CONFIG;
 
-    $path = dirname(__DIR__);
-    if (!preg_match("/(\\\\|\\/)vendor(\\\\|\\/)tpf(\\\\|\\/)framework$/", $path)) {
-        $path .= '/vendor/tpf/framework';
-    }
-
-    if (!file_exists($path . '/config.php') && file_exists(dirname(__DIR__) . '/config.sample.php')) {
-        copy($path . '/config.sample.php', dirname(__DIR__) . '/config.php');
+    if (!file_exists(CONFIG_PATH) && file_exists(PATH . '/vendor/' . VENDOR_PATH . '/config.sample.php')) {
+        copy(PATH . '/vendor/' . VENDOR_PATH . '/config.sample.php', CONFIG_PATH);
     }
 
     $tables = array_merge(['User', 'Session'], getRealmEntityNames());
@@ -39,21 +36,21 @@ function configure(): array
             $config = updateDBConfig($config);
         }
 
-        file_put_contents($path.'/config.php', $config);
+        file_put_contents(CONFIG_PATH, $config);
 
     } else if (isset($_POST['db_host']) || isset($_POST['db_name']) || isset($_POST['db_user']) || isset($_POST['db_password'])) {
 
         $needToRename = isset($_GET['db_name']) && $_POST['db_name'] != $TPF_CONFIG['db']['db_name'];
         $oldPrefix = $TPF_CONFIG['db']['table_prefix'] ?? null;
 
-        $config = file_get_contents($path.'/config.php');
+        $config = file_get_contents(CONFIG_PATH);
         $config = updateDBConfig($config);
 
         if ($needToRename) {
             renameDB((new Repository(''))->mb_escape($_GET['db_name']), $oldPrefix);
         }
 
-        file_put_contents($path.'/config.php', $config);
+        file_put_contents(CONFIG_PATH, $config);
     }
 
     foreach ($_POST as $key => $value) {

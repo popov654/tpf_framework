@@ -7,7 +7,7 @@ define('VENDOR_PATH', 'tpf/framework');
 define('LEVELS', count(explode('/', VENDOR_PATH)) + 2);
 define('PATH', dirname(__DIR__, LEVELS));
 
-require_once PATH . '/vendor/'. VENDOR_PATH .'/config.php';
+require_once PATH . '/config/config.php';
 require_once PATH . '/vendor/'. VENDOR_PATH .'/Core/configure.php';
 
 function render($template, $args = [], $suppressErrors = false): string
