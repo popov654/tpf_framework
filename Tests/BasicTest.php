@@ -13,7 +13,7 @@ abstract class BasicTest extends TestCase
         global $TPF_CONFIG, $TPF_REQUEST;
 
         $TPF_REQUEST = [];
-        while (!preg_match("/tpf$/", getcwd())) {
+        while (!preg_match("/tpf(\\\\|\\/)framework$/", getcwd())) {
             chdir('..');
         }
         require_once './config.sample.php';

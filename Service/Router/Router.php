@@ -16,7 +16,7 @@ class Router
         global $TPF_CONFIG, $TPF_REQUEST;
         $realm = $TPF_CONFIG['default_realm'] ?? 'blog';
 
-        require_once __DIR__ . "/../../Core/controllers.php";
+        require_once PATH . '/vendor/' . VENDOR_PATH . '/Core/controllers.php';
 
         if ($request->getPathInfo() == '/') {
             return self::__routeHome($request);
@@ -77,12 +77,12 @@ class Router
             $className = self::getClassnameByRealm($realm);
         }
 
-        if ($isHome && $className == 'AdminController' && !file_exists(dirname(__DIR__, 4) . '/src/Controller/'. $className .'.php')) {
-            require_once dirname(__DIR__, 4) . '/vendor/tpf/Controller/' . $className . '.php';
-        } else if ($isHome && $className == 'AdminController' && file_exists(dirname(__DIR__, 4) . '/src/Controller/Admin/HomeController.php')) {
-            require_once dirname(__DIR__, 4) . '/src/Controller/Admin/HomeController.php';
+        if ($isHome && $className == 'AdminController' && !file_exists(PATH . '/src/Controller/' . $className .'.php')) {
+            require_once PATH . '/vendor/tpf/framework/Controller/' . $className . '.php';
+        } else if ($isHome && $className == 'AdminController' && file_exists(PATH . '/src/Controller/Admin/HomeController.php')) {
+            require_once PATH . '/src/Controller/Admin/HomeController.php';
         } else {
-            require_once dirname(__DIR__, 4) . '/src/Controller/' . (!$isHome ? $realm . '/' : '') . $className . '.php';
+            require_once PATH . '/src/Controller/' . (!$isHome ? $realm . '/' : '') . $className . '.php';
         }
 
         $controller = new $className;
