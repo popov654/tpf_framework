@@ -40,18 +40,20 @@ class Utils
 
     public static function seedBlogPosts()
     {
-        $time = (new \DateTime())->format('Y-m-d H:i:s');
+        $categories = self::seedCategories();
+
+        $time = new \DateTime();
         $posts = [
             [
                 'name' => 'First blog entry',
                 'text' => 'Content 1',
                 'image' => 'website-3483020_640.png',
-                'categories' => [1],
-                'author_id' => 1,
-                'is_active' => 1,
-                'is_deleted' => 0,
-                'created_at' => $time,
-                'modified_at' => $time
+                'categories' => [$categories[0]->id],
+                'authorId' => 1,
+                'isActive' => 1,
+                'isDeleted' => 0,
+                'createdAt' => $time,
+                'modifiedAt' => $time
             ],
             [
                 'name' => 'Second blog entry',
@@ -59,23 +61,30 @@ class Utils
                 'image' => 'website-3374825_1920.jpg',
                 'categories' => [],
                 'tags' => ['tag'],
-                'author_id' => 1,
-                'is_active' => 1,
-                'is_deleted' => 0,
-                'created_at' => $time,
-                'modified_at' => $time
+                'authorId' => 1,
+                'isActive' => 1,
+                'isDeleted' => 0,
+                'createdAt' => $time,
+                'modifiedAt' => $time
             ]
         ];
         require_once PATH . '/src/Model/Entity.php';
         require_once PATH . '/src/Model/Blog/Post.php';
+
+        $result = [];
+
         foreach ($posts as $postData) {
-            $post = new App\Model\Blog\Post();
+            $post = new \App\Model\Blog\Post();
+            $result[] = $post;
             AbstractEntity::fillFromArray($post, $postData);
             $post->save();
         }
 
-        self::seedCategories();
-        self::seedComments();
+        $comments = self::seedComments($posts);
+
+        $result = ['posts' => $result, 'categories' => $categories, 'comments' => $comments];
+
+        return $result;
     }
 
     private static function seedCategories()
@@ -110,24 +119,29 @@ class Utils
 
         $parentId = 0;
 
-        foreach ($categories as $category) {
+        $result = [];
+
+        foreach ($categories as $categoryData) {
             $category = new Category();
-            AbstractEntity::fillFromArray($category, $category);
+            $result[] = $category;
+            AbstractEntity::fillFromArray($category, $categoryData);
             $category->parent = $parentId;
             $category->save();
             if ($parentId == 0) {
                 $parentId = $category->id;
             }
         }
+
+        return $result;
     }
 
-    private static function seedComments()
+    private static function seedComments(array $posts)
     {
         $time = new \Datetime();
         $comments = [
             [
                 'type' => 'blog_post',
-                'entityId' => 1,
+                'entityId' => $posts[0]->id,
                 'text' => 'Comment 1',
                 'authorId' => 1,
                 'createdAt' => $time,
@@ -135,7 +149,7 @@ class Utils
             ],
             [
                 'type' => 'blog_post',
-                'entityId' => 1,
+                'entityId' => $posts[0]->id,
                 'text' => 'Comment 2',
                 'authorId' => 1,
                 'createdAt' => $time,
@@ -143,10 +157,15 @@ class Utils
             ]
         ];
 
+        $result = [];
+
         foreach ($comments as $commentData) {
             $comment = new Comment();
+            $result[] = $comment;
             AbstractEntity::fillFromArray($comment, $commentData);
             $comment->save();
         }
+
+        return $result;
     }
 }
