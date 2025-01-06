@@ -27,6 +27,21 @@ class Router
         if ($response = self::processDefaultRoutes($request)) {
             return $response;
         }
+        if (file_exists(PATH . '/config/routes.php')) {
+            require_once PATH . '/config/routes.php';
+            if (isset($TPF_CONFIG['routes']) && array_key_exists($request->getPathInfo(), $TPF_CONFIG['routes'])) {
+                $value = $TPF_CONFIG['routes'][$request->getPathInfo()];
+                if (strpos($value,'::')) {
+                    list($className, $method) = explode('::', $value);
+                    require_once PATH . '/src/Controller/' . $className . '.php';
+                    if (strpos($className,'/')) {
+                        $className = @array_pop(explode('/', $className));
+                    }
+                    $controller = new $className;
+                    return $controller->$method($request);
+                }
+            }
+        }
 
         preg_match('|(/[\w\d~_-]+){1,4}|', $request->getPathInfo(), $matches);
         if ($matches[0]) {
