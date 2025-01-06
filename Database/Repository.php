@@ -3,9 +3,18 @@
 namespace Tpf\Database;
 
 use Tpf\Model\User;
+use Tpf\Model\Category;
 
 class Repository extends Query
 {
+    public function __construct(string $className)
+    {
+        parent::__construct($className);
+        if ($className == Category::class) {
+            $this->order = ["parent" => "asc", "id" => "asc"];
+        }
+    }
+
     protected const PRIMARY_COLUMN_KEY = "id";
 
     /**
