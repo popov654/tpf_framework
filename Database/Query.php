@@ -158,12 +158,17 @@ class Query
                 $entity->{$column['property']} = $value;
 
                 if (is_numeric($value) && $loadEmbedded && $maxDepth > 0) {
-                    preg_match("/([a-z0-9]+)Id$/", $column['property'], $matches);
+                    preg_match("/([a-zA-Z0-9]+)Id$/", $column['property'], $matches);
                     if (isset($matches[0])) {
-                        $className = preg_replace_callback("/(^|_)([a-z])/", function ($matches) {
-                            return strtoupper($matches[2]);
-                        }, $matches[1]);
-                        $fullClassName = 'Tpf\\Model\\' . $className;
+                        preg_match("/(^|[A-Z])[a-z]+$/", $matches[1], $m);
+                        $className = ucfirst($m[0]);
+                        if (in_array($className, ['User', 'Session', 'Category', 'Comment'])) {
+                            require_once PATH . '/vendor/' . VENDOR_PATH . '/Model/' . $className . '.php';
+                            $fullClassName = '\\Tpf\\Model\\' . $className;
+                        } else {
+                            require_once PATH . '/src/Model/' . $className . '.php';
+                            $fullClassName = '\\App\\Model\\' . $className;
+                        }
                         $obj = new $fullClassName;
                         if ($obj instanceof AbstractEntity) {
                             $fieldName = preg_replace_callback("/^[A-Z]/", function ($matches) {
