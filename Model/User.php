@@ -25,6 +25,7 @@ class User extends AbstractEntity
     public string $username;
     public ?string $password;
     public ?string $hashedPassword;
+    public string $photo;
     public string $firstname;
     public string $lastname;
     public string $email;
@@ -43,6 +44,7 @@ class User extends AbstractEntity
     public function __construct()
     {
         parent::__construct();
+        $this->photo = '';
         $this->firstname = '';
         $this->lastname = '';
         $this->role = self::ROLE_CLIENT;
