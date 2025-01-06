@@ -173,10 +173,8 @@ class Query
 
                         $obj = new $fullClassName;
                         if ($obj instanceof AbstractEntity) {
-                            $fieldName = preg_replace_callback("/^[A-Z]/", function ($matches) {
-                                return strtolower($matches[0]);
-                            }, $className);
-                            $entity->{$fieldName} = $fullClassName::load($value, $loadEmbedded, --$maxDepth);
+                            $fieldName = lcfirst($className);
+                            $entity->{$targetFieldName} = $fullClassName::load($value, $loadEmbedded, --$maxDepth);
                         }
                     }
                 }
