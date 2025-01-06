@@ -160,15 +160,17 @@ class Query
                 if (is_numeric($value) && $loadEmbedded && $maxDepth > 0) {
                     preg_match("/([a-zA-Z0-9]+)Id$/", $column['property'], $matches);
                     if (isset($matches[0])) {
-                        preg_match("/(^|[A-Z])[a-z]+$/", $matches[1], $m);
-                        $className = ucfirst($m[0]);
+                        $targetFieldName = $matches[1];
+                        $property = new ReflectionProperty($this->className, $targetFieldName);
+                        $fullClassName = $property->getType()->getName();
+                        $className = @array_pop(explode('\\', $fullClassName));
+
                         if (in_array($className, ['User', 'Session', 'Category', 'Comment'])) {
                             require_once PATH . '/vendor/' . VENDOR_PATH . '/Model/' . $className . '.php';
-                            $fullClassName = '\\Tpf\\Model\\' . $className;
                         } else {
                             require_once PATH . '/src/Model/' . $className . '.php';
-                            $fullClassName = '\\App\\Model\\' . $className;
                         }
+
                         $obj = new $fullClassName;
                         if ($obj instanceof AbstractEntity) {
                             $fieldName = preg_replace_callback("/^[A-Z]/", function ($matches) {
