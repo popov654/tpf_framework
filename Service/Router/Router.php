@@ -27,6 +27,10 @@ class Router
         if ($response = self::processDefaultRoutes($request)) {
             return $response;
         }
+        if ($response = self::processSystemAssets($request)) {
+            return $response;
+        }
+
         if (file_exists(PATH . '/config/routes.php')) {
             require_once PATH . '/config/routes.php';
             if (isset($TPF_CONFIG['routes']) && array_key_exists($request->getPathInfo(), $TPF_CONFIG['routes'])) {
@@ -182,6 +186,24 @@ class Router
         }
 
         return null;
+    }
+
+    private static function processSystemAssets(Request $request)
+    {
+        if (preg_match("/\/tpf\/(css|js)\/([a-z0-9_-]+)\.\\1$/i", $request->getPathInfo(), $matches)) {
+            $path = PATH . '/vendor/' . VENDOR_PATH . '/assets/' . $matches[1] . '/' . $matches[2] . '.' . $matches[1];
+            if (file_exists($path)) {
+                $types = ['css' => 'text/css', 'js' => 'text/javascript', 'ttf' => 'font/ttf', 'woff' => 'font/woff', 'eot' => 'font/eot', 'html' => 'text/html'];
+                $response = new Response(file_get_contents($path));
+                if (isset($types[$matches[1]])) {
+                    $response->headers->add(['Content-Type' => $types[$matches[1]]]);
+                } else {
+                    $response->headers->add(['Content-Type' => 'text/plain']);
+                }
+                return $response;
+            }
+            return new Response("", Response::HTTP_NOT_FOUND);
+        }
     }
 
     public static function getClassnameByRealm(?string $realm): string
