@@ -306,8 +306,7 @@ function saveEntity(Request $request): Response
 }
 
 
-
-const MAX_UPLOAD_SIZE = 1024*50*1024;
+define('MAX_UPLOAD_SIZE', $TPF_CONFIG['max_upload_file_size'] ?? 1024*50*1024);
 
 function uploadFile(Request $request): Response
 {
