@@ -47,7 +47,7 @@ function configure(): array
         $config = updateDBConfig($config);
 
         if ($needToRename) {
-            renameDB((new Repository(''))->mb_escape($_GET['db_name']), $oldPrefix);
+            renameDB(Query::mb_escape($_GET['db_name']), $oldPrefix);
         }
 
         file_put_contents(CONFIG_PATH, $config);

@@ -83,7 +83,7 @@ class Query
                 $cond .= " AND ";
             }
             $cond .= "`$name` = ";
-            $cond .= is_numeric($value) ? $value : "'" . $this->mb_escape($value) . "'";
+            $cond .= is_numeric($value) ? $value : "'" . self::mb_escape($value) . "'";
         }
         $this->where .= (strlen($this->where) > 0 ? " AND " : "") . $cond;
 
@@ -97,7 +97,7 @@ class Query
         return $this;
     }
 
-    public function mb_escape(string $string)
+    public static function mb_escape(string $string)
     {
         return preg_replace("/[\\x00\\x0A\\x0D\\x1A\\x22\\x27\\x5C]/u", "\\\$0", $string);
     }

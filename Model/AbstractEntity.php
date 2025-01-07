@@ -3,6 +3,7 @@
 namespace Tpf\Model;
 
 use Tpf\Database\Repository;
+use Tpf\Database\Query;
 use Tpf\Model\User;
 use Tpf\Service\Auth\PasswordHasher;
 
@@ -101,11 +102,11 @@ abstract class AbstractEntity
         return $data;
     }
 
-    public static function getSchema($type): array
+    public static function getSchema($table): array
     {
         global $dbal;
         /** @var \PDO $dbal */
-        $columns = $dbal->query("SHOW COLUMNS FROM `" . $type . "`")->fetchAll(\PDO::FETCH_ASSOC);
+        $columns = $dbal->query("SHOW COLUMNS FROM `" . Query::mb_escape($table) . "`")->fetchAll(\PDO::FETCH_ASSOC);
 
         $result = [];
         foreach ($columns as $col) {
