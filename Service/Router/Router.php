@@ -194,10 +194,10 @@ class Router
         return null;
     }
 
-    private static function processSystemAssets(Request $request)
+    public static function processSystemAssets(Request $request)
     {
-        if (preg_match("/\/tpf\/(css|js)\/([a-z0-9_-]+)\.\\1$/i", $request->getPathInfo(), $matches)) {
-            $path = PATH . '/vendor/' . VENDOR_PATH . '/assets/' . $matches[1] . '/' . $matches[2] . '.' . $matches[1];
+        if (preg_match("/\/tpf\/([^\/]+\/)*(css|js)\/(([a-z0-9_-]+\.)+)\\2$/i", $request->getPathInfo(), $matches)) {
+            $path = PATH . '/vendor/' . VENDOR_PATH . '/assets/' . $matches[1] . $matches[2] . '/' . $matches[3] . $matches[2];
             if (file_exists($path)) {
                 $types = ['css' => 'text/css', 'js' => 'text/javascript', 'ttf' => 'font/ttf', 'woff' => 'font/woff', 'eot' => 'font/eot', 'html' => 'text/html'];
                 $response = new Response(file_get_contents($path));
