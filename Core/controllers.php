@@ -97,8 +97,8 @@ function getEntitySchema(Request $request): Response
     if (!$request->get('type')) {
         return new JsonResponse(['error' => 'Bad request'], 400);
     }
-    $tables = array_merge(['user'], getRealmEntityNames());
-    $type = getEntityType($request->get('type'), $tables);
+
+    $type = getEntityType($request->get('type'));
     if (!$type) {
         return new JsonResponse(['error' => 'Unknown type'], 400);
     }
@@ -112,15 +112,9 @@ function getEntitySchema(Request $request): Response
 
 function getEntities(Request $request): Response
 {
-    global $TPF_REQUEST, $dbal;
+    global $dbal;
 
-    $tables = getRealmEntityNames();
-
-    if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
-        $tables[] = 'user';
-    }
-
-    $type = getEntityType($request->get('type'), $tables);
+    $type = getEntityType($request->get('type'));
     if (!$type) {
         return new JsonResponse(['error' => 'Unknown type'], 400);
     }
@@ -153,28 +147,26 @@ function getEntity(Request $request): Response
         return new JsonResponse(['error' => 'Bad request'], 400);
     }
 
-    global $TPF_REQUEST, $dbal;
+    global $dbal;
 
-    $tables = getRealmEntityNames();
-
-    if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
-        $tables[] = 'user';
-    }
-
-    $type = getEntityType($request->get('type'), $tables);
+    $type = getEntityType($request->get('type'));
     if (!$type) {
         return new JsonResponse(['error' => 'Unknown type'], 400);
     }
+
     $className = getFullClassNameByType($type);
 
     $repository = new Repository($className);
-    $entity = $repository->fetchOne($request->get('id'));
+    $entity = $repository->fetchOne($request->get('id'), true, 1);
 
     if (!$entity) {
         return new JsonResponse(['error' => 'Element not found'], 404);
     }
 
     $fields = array_keys($className::getSchema($type));
+    if (in_array('authorId', $fields)) {
+        array_splice($fields, array_search('authorId', $fields)+1, 0, 'author');
+    }
 
     return new JsonResponse($entity->getFields($fields), 200);
 }
@@ -185,18 +177,13 @@ function getEntityComments(Request $request): Response
         return new JsonResponse(['error' => 'Bad request'], 400);
     }
 
-    global $TPF_REQUEST, $dbal;
+    global $dbal;
 
-    $tables = getRealmEntityNames();
-
-    if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
-        $tables[] = 'user';
-    }
-
-    $type = getEntityType($request->get('type'), $tables);
+    $type = getEntityType($request->get('type'));
     if (!$type) {
         return new JsonResponse(['error' => 'Unknown type'], 400);
     }
+
     $className = getFullClassNameByType($type);
 
     $repository = new Repository($className);
@@ -262,30 +249,19 @@ function getCategoriesByType(Request $request): Response
 
 function saveEntity(Request $request): Response
 {
-    global $TPF_REQUEST;
-
     if (!$request->get('type')) {
         return new JsonResponse(['error' => 'Bad request'], 400);
     }
 
-    $tables = getRealmEntityNames();
-
-    if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
-        $tables[] = 'user';
-    }
-
-    $type = getEntityType($request->get('type'), $tables);
+    $type = getEntityType($request->get('type'));
     if (!$type) {
         return new JsonResponse(['error' => 'Unknown type'], 400);
     }
+
     $className = getFullClassNameByType($type);
 
     try {
         $data = json_decode($request->getContent(), true);
-
-        if (!in_array(strtolower($type), $tables)) {
-            return new JsonResponse(['error' => 'Unknown type'], 400);
-        }
 
         if (!$request->get('id')) {
             $entity = new $className();

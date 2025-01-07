@@ -79,11 +79,23 @@ abstract class AbstractEntity
     public function getFields(array $fields): array
     {
         $data = [];
+        if ($fields !== [] && array_keys($fields) !== range(0, count($fields) - 1)) {
+            $fields = array_keys($fields);
+        }
         foreach ($fields as $field) {
             if (!isset($this->$field)) continue;
             $data[$field] = $this->$field;
             if ($data[$field] instanceof \DateTime) {
                 $data[$field] = $data[$field]->format('Y-m-d\TH:i:s');
+            }
+            if ($data[$field] instanceof self) {
+                $type = Repository::getTableNameByClass(get_class($data[$field]));
+                $schema = self::getSchema($type);
+                if ($type == 'user') {
+                    unset($schema['password']);
+                    unset($schema['activationToken']);
+                }
+                $data[$field] = $data[$field]->getFields(array_keys($schema));
             }
         }
         return $data;

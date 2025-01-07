@@ -270,8 +270,16 @@ function getRealmEntityNames(): array {
     return $result;
 }
 
-function getEntityType(string $type, array $tables): ?string
+function getEntityType(string $type): ?string
 {
+    global $TPF_REQUEST;
+
+    $tables = getRealmEntityNames();
+
+    if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
+        $tables[] = 'user';
+    }
+
     if (!in_array($type, $tables)) {
         $entities = array_values(array_filter($tables, function ($table) use ($type) {
             return preg_match("/^" . $type . "_/", $table);
