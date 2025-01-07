@@ -118,7 +118,7 @@ abstract class AbstractEntity
             } else if (preg_match("/^tinyint/", $col['Type'])) {
                 $type = 'bool';
             } else if (preg_match("/^json/", $col['Type'])) {
-                $type = 'array';
+                $type = ($col['Field'] == 'extra' || self::isJsonObjectField($table, $col['Field'])) ? 'object' : 'array';
             } else if (preg_match("/^date/", $col['Type'])) {
                 $type = 'date';
             } else if (preg_match("/^time/", $col['Type'])) {
@@ -140,6 +140,15 @@ abstract class AbstractEntity
         }
 
         return $result;
+    }
+
+    public static function isJsonObjectField(string $table, string $field): bool
+    {
+        global $dbal;
+        /** @var \PDO $dbal */
+        $result = $dbal->query("SELECT count(1) AS `count` FROM `" . Query::mb_escape($table) . "` WHERE `" . Query::mb_escape($field) . "` REGEXP '^\\\\{.*\\\\}$'")->fetch(\PDO::FETCH_ASSOC);
+
+        return ((int)$result['count']) > 0;
     }
 
     public function getComments(): array
