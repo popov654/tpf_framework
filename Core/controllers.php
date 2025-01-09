@@ -124,6 +124,7 @@ function getEntities(Request $request): Response
     $repository = new Repository($className);
     $repository->setOffset($request->get('offset') ?? 0);
     $repository->setLimit($request->get('count') ?? 25);
+    $repository->whereEq(['is_deleted' => $request->get('trash') !== null]);
     if ($request->get('category')) {
         $repository->filterByCategory($request->get('category'), $request->get('excludeSubCats') !== null);
     }
@@ -280,6 +281,37 @@ function saveEntity(Request $request): Response
         return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
     }
 }
+
+function deleteEntities(Request $request): Response
+{
+    if (!$request->get('type')) {
+        return new JsonResponse(['error' => 'Bad request'], 400);
+    }
+
+    $type = getEntityType($request->get('type'));
+    if (!$type) {
+        return new JsonResponse(['error' => 'Unknown type'], 400);
+    }
+
+    $className = getFullClassNameByType($type);
+
+    try {
+        $repository = new Repository($className);
+
+        if (!isset($TPF_CONFIG['use_soft_delete']) || !$TPF_CONFIG['use_soft_delete']) {
+            $repository->where(['`id` IN ('. implode(',', json_decode($request->get('ids'), true)) .')'])->delete();
+            global $dbal;
+            $dbal->exec('ALTER TABLE `' . $type . '` AUTO_INCREMENT=0');
+        } else {
+            $dbal->exec('UPDATE `' . $type . '` SET `is_deleted`=1 WHERE `id` IN ('. implode(',', json_decode($request->get('ids'), true)) .')');
+        }
+
+        return new JsonResponse(['result' => 'ok'], 200);
+    } catch (Exception $e) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    }
+}
+
 
 
 define('MAX_UPLOAD_SIZE', $TPF_CONFIG['max_upload_file_size'] ?? 1024*50*1024);

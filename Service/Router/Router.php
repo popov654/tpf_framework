@@ -175,6 +175,12 @@ class Router
             }
             return saveEntity($request);
         }
+        if ($request->getPathInfo() == '/deleteEntity' || $request->getPathInfo() == '/deleteItem') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            return deleteEntities($request);
+        }
         if ($request->getPathInfo() == '/upload' && $request->getMethod() == 'POST') {
             return uploadFile($request);
         }
