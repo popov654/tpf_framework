@@ -198,12 +198,35 @@ class Query
             : 0;
     }
 
+    public function delete()
+    {
+        global $dbal;
+
+        $sql = $this->prepareDelete();
+        $dbal->exec($sql);
+    }
+
     protected function prepareSelect($select): string
     {
         $tableName = Repository::getTableNameByClass($this->className);
 
         /** base sql query */
         $sql = "SELECT " . $select . "FROM `" . $tableName . "`";
+
+        /** where */
+        if (!is_null($this->where)) {
+            $sql.= " WHERE " . $this->where;
+        }
+
+        return $sql;
+    }
+
+    protected function prepareDelete(): string
+    {
+        $tableName = Repository::getTableNameByClass($this->className);
+
+        /** base sql query */
+        $sql = "DELETE FROM `" . $tableName . "`";
 
         /** where */
         if (!is_null($this->where)) {

@@ -137,9 +137,9 @@ class Repository extends Query
     }
 
     /**
-     * @method void delete(object $entity)
+     * @method void remove(object $entity)
      */
-    public function delete($entity)
+    public function remove($entity)
     {
         global $dbal;
 
