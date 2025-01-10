@@ -185,7 +185,7 @@ class Query
         return $results;
     }
 
-    public function select($select): array
+    public function select($select = '*'): array
     {
         global $dbal;
 
@@ -232,6 +232,38 @@ class Query
 
         /** base sql query */
         $sql = "DELETE FROM `" . $tableName . "`";
+
+        /** where */
+        if (!is_null($this->where)) {
+            $sql.= " WHERE " . $this->where;
+        }
+
+        return $sql;
+    }
+
+    public function update($fields)
+    {
+        global $dbal;
+
+        $placeholder = '';
+
+        foreach ($fields as $key => $value) {
+            if ($key == "id") continue;
+            $placeholder .= '`' . $key . '` = :'. $key .', ';
+        }
+        $placeholder = substr($placeholder, 0, -2);
+
+        $sql = $this->prepareUpdate($placeholder);
+        $st = $dbal->prepare($sql);
+        $st->execute($fields);
+    }
+
+    protected function prepareUpdate($data)
+    {
+        $tableName = Repository::getTableNameByClass($this->className);
+
+        /** base sql query */
+        $sql = "UPDATE `" . $tableName . "` SET " . $data;
 
         /** where */
         if (!is_null($this->where)) {
