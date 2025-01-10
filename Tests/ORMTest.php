@@ -51,7 +51,7 @@ class ORMTest extends BasicTest
         $dbal->exec('ALTER TABLE `user` AUTO_INCREMENT=0');
     }
 
-    public function testFromArray()
+    public function testCreateEntityFromArray()
     {
         $data = [
             'username' => 'test',
