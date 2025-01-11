@@ -196,13 +196,13 @@ class Router
 
     public static function processSystemAssets(Request $request)
     {
-        if (preg_match("/\/tpf\/([^\/]+\/)*(css|js)\/(([a-z0-9_-]+\.)+)\\2$/i", $request->getPathInfo(), $matches)) {
-            $path = PATH . '/vendor/' . VENDOR_PATH . '/assets/' . $matches[1] . $matches[2] . '/' . $matches[3] . $matches[2];
+        if (preg_match("/\/tpf\/([^\/]+\/)*(css|js|icons)\/((?:[a-z0-9_-]+\.)+)(\\2|gif|png|jpg|webp|svg)$/i", $request->getPathInfo(), $matches)) {
+            $path = PATH . '/vendor/' . VENDOR_PATH . '/assets/' . ($matches[1] ?? '') . $matches[2] . '/' . $matches[3] . $matches[4];
             if (file_exists($path)) {
-                $types = ['css' => 'text/css', 'js' => 'text/javascript', 'ttf' => 'font/ttf', 'woff' => 'font/woff', 'eot' => 'font/eot', 'html' => 'text/html'];
+                $types = ['css' => 'text/css', 'js' => 'text/javascript', 'ttf' => 'font/ttf', 'woff' => 'font/woff', 'eot' => 'font/eot', 'html' => 'text/html', 'svg' => 'image/svg+xml', 'gif' => 'image/gif', 'jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'];
                 $response = new Response(file_get_contents($path));
-                if (isset($types[$matches[1]])) {
-                    $response->headers->add(['Content-Type' => $types[$matches[1]]]);
+                if (isset($types[$matches[4]])) {
+                    $response->headers->add(['Content-Type' => $types[$matches[4]]]);
                 } else {
                     $response->headers->add(['Content-Type' => 'text/plain']);
                 }
