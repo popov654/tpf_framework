@@ -94,6 +94,7 @@ PhotoPicker.prototype.setPhotos = function(photos) {
     }
     if (!photos || !photos.length) {
         container.lastElementChild.style.display = ''
+        this.updateValue()
         return
     }
     if (photos.length && !this.isMultiple) {
@@ -105,6 +106,7 @@ PhotoPicker.prototype.setPhotos = function(photos) {
     if (!container.picker.isMultiple) {
         container.lastElementChild.style.display = 'none'
     }
+    this.updateValue()
 }
 
 PhotoPicker.prototype.add = function(url) {
