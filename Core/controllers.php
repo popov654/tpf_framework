@@ -122,8 +122,6 @@ function getEntities(Request $request): Response
     $className = getFullClassNameByType($type);
 
     $repository = new Repository($className);
-    $repository->setOffset($request->get('offset') ?? 0);
-    $repository->setLimit($request->get('count') ?? 25);
     $repository->whereEq(['is_deleted' => $request->get('trash') !== null]);
     if ($request->get('category')) {
         $repository->filterByCategory($request->get('category'), $request->get('excludeSubCats') !== null);
@@ -131,6 +129,11 @@ function getEntities(Request $request): Response
     if ($request->get('tags')) {
         $repository->filterByTags(json_decode($request->get('tags'), true), $request->get('findTag') == 'any');
     }
+    $total = $repository->count();
+
+    $repository->setOffset($request->get('offset') ?? 0);
+    $repository->setLimit($request->get('count') ?? 25);
+
     $entities = $repository->fetch();
 
     $fields = ['id', 'name', 'image', 'categories', 'tags', 'createdAt', 'modifiedAt'];
@@ -139,7 +142,7 @@ function getEntities(Request $request): Response
         $result[] = $entity->getFields($fields);
     }
 
-    return new JsonResponse($result, 200);
+    return new JsonResponse(['total' => $total, 'data' => $result], 200);
 }
 
 function getEntity(Request $request): Response
