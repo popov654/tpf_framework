@@ -206,6 +206,10 @@ class Router
                 } else {
                     $response->headers->add(['Content-Type' => 'text/plain']);
                 }
+                session_cache_limiter(false);
+                $response->headers->add(['Cache-Control' => 'public, max-age=604800']);
+                $response->headers->add(['Expires' => gmdate('D, d M Y H:i:s', time() + 3600 * 24 * 365) . ' GMT']);
+
                 return $response;
             }
             return new Response("", Response::HTTP_NOT_FOUND);
