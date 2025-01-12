@@ -301,12 +301,17 @@ function deleteEntities(Request $request): Response
     try {
         $repository = new Repository($className);
 
-        if (!isset($TPF_CONFIG['use_soft_delete']) || !$TPF_CONFIG['use_soft_delete']) {
+        $softDelete = $request->get('soft') !== null || (isset($TPF_CONFIG['use_soft_delete']) && $TPF_CONFIG['use_soft_delete']);
+
+        global $dbal;
+
+        if (!$softDelete) {
             $repository->where(['`id` IN ('. implode(',', json_decode($request->get('ids'), true)) .')'])->delete();
             global $dbal;
             $dbal->exec('ALTER TABLE `' . $type . '` AUTO_INCREMENT=0');
         } else {
-            $dbal->exec('UPDATE `' . $type . '` SET `is_deleted`=1 WHERE `id` IN ('. implode(',', json_decode($request->get('ids'), true)) .')');
+            $ids = json_decode($request->get('ids'), true);
+            $dbal->exec('UPDATE `' . $type . '` SET `is_deleted`=1 WHERE `id` IN ('. implode(',', $ids) .')');
         }
 
         return new JsonResponse(['result' => 'ok'], 200);
