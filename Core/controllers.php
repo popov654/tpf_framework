@@ -225,8 +225,10 @@ function getCategoriesByType(Request $request): Response
 
     $result = [];
 
+    $fields = array_keys(AbstractEntity::getSchema('category'));
+
     foreach ($categories as $category) {
-        $result[] = $category->getFields(array_keys(AbstractEntity::getSchema('category')));
+        $result[] = $category->getFields($fields);
     }
 
     foreach ($result as &$category) {
