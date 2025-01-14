@@ -10,6 +10,7 @@ class Category extends AbstractEntity
      * @property string $type
      * @property int $parent
      * @property string $name
+     * @property text $image
      * @property bool $isActive
      * @property bool $isDeleted
      * @property datetime $createdAt
@@ -20,6 +21,7 @@ class Category extends AbstractEntity
     public string $type;
     public int $parent;
     public string $name;
+    public ?string $image;
 
     public bool $isActive;
     public bool $isDeleted;
