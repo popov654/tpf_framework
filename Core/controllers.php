@@ -122,9 +122,11 @@ function getEntities(Request $request): Response
     $className = getFullClassNameByType($type);
 
     $repository = new Repository($className);
-    $repository->whereEq(['is_deleted' => $request->get('trash') !== null]);
-    if ($request->get('category')) {
-        $repository->filterByCategory($request->get('category'), $request->get('excludeSubCats') !== null);
+    $repository->whereEq(['is_deleted' => $request->get('trash') !== null || $request->get('category') == 'trash']);
+    if ($request->get('category') !== null && $request->get('category') != 'trash') {
+        $category = $request->get('category') != 0 ? $request->get('category') : '';
+        $excludeSubcategories = $request->get('excludeSubCats') !== null;
+        $repository->filterByCategory($category, $excludeSubcategories);
     }
     if ($request->get('tags')) {
         $repository->filterByTags(json_decode($request->get('tags'), true), $request->get('findTag') == 'any');

@@ -216,7 +216,7 @@ class Query
         $tableName = Repository::getTableNameByClass($this->className);
 
         /** base sql query */
-        $sql = "SELECT " . $select . "FROM `" . $tableName . "`";
+        $sql = "SELECT " . $select . " FROM `" . $tableName . "`";
 
         /** where */
         if (!is_null($this->where)) {

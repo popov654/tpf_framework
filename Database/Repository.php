@@ -18,19 +18,19 @@ class Repository extends Query
     protected const PRIMARY_COLUMN_KEY = "id";
 
     /**
-     * @method array filterByCategory(int $categoryId, ?bool $excludeSubcategories = false)
+     * @method self filterByCategory(int $categoryId, ?bool $excludeSubcategories = false)
      */
-    public function filterByCategory(int $categoryId, ?bool $excludeSubcategories = false)
+    public function filterByCategory(int|string $categoryId, ?bool $excludeSubcategories = false)
     {
         if (!$excludeSubcategories) {
-            return $this->where(["`categories` REGEXP '(\\\\[|,)\"?". $categoryId ."\"?(,|\\\\])'"]);
+            return $this->where(["`categories` REGEXP '(\\\\[|,\\\\s?)\"?". $categoryId ."\"?(,|\\\\])'"]);
         } else {
-            return $this->where(["`categories` REGEXP '(\\\\[|,)\"?". $categoryId ."\"?\\\\]'"]);
+            return $this->where(["`categories` REGEXP '(\\\\[|,\\\\s?)\"?". $categoryId ."\"?\\\\]'"]);
         }
     }
 
     /**
-     * @method array filterByTags(array $tags, ?bool $findAny = false)
+     * @method self filterByTags(array $tags, ?bool $findAny = false)
      */
     public function filterByTags(array $tags, ?bool $findAny = false)
     {
