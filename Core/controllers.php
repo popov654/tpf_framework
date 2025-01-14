@@ -287,6 +287,35 @@ function saveEntity(Request $request): Response
     }
 }
 
+function setEntitiesCategory(Request $request): Response
+{
+    if (!$request->get('type')) {
+        return new JsonResponse(['error' => 'Bad request'], 400);
+    }
+
+    $type = getEntityType($request->get('type'));
+    if (!$type) {
+        return new JsonResponse(['error' => 'Unknown type'], 400);
+    }
+
+    try {
+        global $dbal;
+
+        $ids = json_decode($request->get('ids'), true);
+        $path = json_decode($request->get('category'), true);
+
+        if ($path !== [] && array_keys($path) !== range(0, count($path) - 1)) {
+            return new JsonResponse(['error' => 'Bad request'], 400);
+        }
+
+        $dbal->exec('UPDATE `' . $type . '` SET `categories`=\'' . $request->get('category') . '\' WHERE `id` IN ('. implode(',', $ids) .')');
+
+        return new JsonResponse(['result' => 'ok'], 200);
+    } catch (Exception $e) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    }
+}
+
 function deleteEntities(Request $request): Response
 {
     if (!$request->get('type')) {
