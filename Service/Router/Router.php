@@ -83,12 +83,12 @@ class Router
         }
     }
 
-    public static function __routeHome(Request $request): Response
+    public static function routeHome(Request $request): Response
     {
         return self::__route(null, null, null, null, $request);
     }
 
-    public static function __routeAdmin(Request $request): Response
+    public static function routeAdmin(Request $request): Response
     {
         global $TPF_CONFIG, $TPF_REQUEST;
         if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_CLIENT) {
@@ -99,7 +99,7 @@ class Router
         return self::__route(null, null, null, null, $request);
     }
 
-    public static function __route(?string $realm, ?string $category, ?string $subcategory, ?string $id, Request $request): Response
+    private static function __route(?string $realm, ?string $category, ?string $subcategory, ?string $id, Request $request): Response
     {
         $isHome = empty($realm);
         if ($isHome && $request->getPathInfo() == '/admin') {
@@ -143,7 +143,7 @@ class Router
         }
     }
 
-    public static function processDefaultRoutes(Request $request): ?Response
+    private static function processDefaultRoutes(Request $request): ?Response
     {
         global $TPF_REQUEST;
         $canEdit = isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role != User::ROLE_CLIENT;
@@ -212,7 +212,7 @@ class Router
         return null;
     }
 
-    public static function processSystemAssets(Request $request)
+    private static function processSystemAssets(Request $request)
     {
         if (preg_match("/\/tpf\/([^\/]+\/)*(css|js|icons)\/((?:[a-z0-9_-]+\.)+)(\\2|gif|png|jpg|webp|svg)$/i", $request->getPathInfo(), $matches)) {
             $path = PATH . '/vendor/' . VENDOR_PATH . '/assets/' . ($matches[1] ?? '') . $matches[2] . '/' . $matches[3] . $matches[4];
