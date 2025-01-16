@@ -33,16 +33,28 @@ class Router
 
         if (file_exists(PATH . '/config/routes.php')) {
             require_once PATH . '/config/routes.php';
-            if (isset($TPF_CONFIG['routes']) && array_key_exists($request->getPathInfo(), $TPF_CONFIG['routes'])) {
-                $value = $TPF_CONFIG['routes'][$request->getPathInfo()];
-                if (strpos($value,'::')) {
-                    list($className, $method) = explode('::', $value);
-                    require_once PATH . '/src/Controller/' . $className . '.php';
-                    if (strpos($className,'/')) {
-                        $className = @array_pop(explode('/', $className));
+            if (isset($TPF_CONFIG['routes'])) {
+                foreach($TPF_CONFIG['routes'] as $key => $value) {
+                    if ($key != $request->getPathInfo()) {
+                        $pattern = preg_replace("/{(\w+)}/", "(?<\\1>[^\/]+)", $key);
+                        if (!preg_match('#^' . $pattern . '$#', $request->getPathInfo(), $matches)) {
+                            continue;
+                        }
+                        foreach ($matches as $param => $val) {
+                            if (!is_numeric($param)) {
+                                $request->attributes->set($param, $val);
+                            }
+                        }
                     }
-                    $controller = new $className;
-                    return $controller->$method($request);
+                    if (strpos($value,'::')) {
+                        list($className, $method) = explode('::', $value);
+                        require_once PATH . '/src/Controller/' . $className . '.php';
+                        if (strpos($className,'/')) {
+                            $className = @array_pop(explode('/', $className));
+                        }
+                        $controller = new $className;
+                        return $controller->$method($request);
+                    }
                 }
             }
         }
