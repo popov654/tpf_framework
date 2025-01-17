@@ -46,6 +46,31 @@ class Repository extends Query
     }
 
     /**
+     * @method self filterByName(string $search, ?bool $strict = false)
+     */
+    public function filterByName(string $search, ?bool $strict = false, ?bool $searchInText = false)
+    {
+        if (!$strict) {
+            $search = implode("(\\\\s+\\\\w+)*\\\\s+", preg_split("/\s+/", self::mb_escape($search)));
+            $this->andWhere(["`name` REGEXP '(^|[\\\\s\",._-])". $search ."'"]);
+        } else {
+            $search = implode("\\\\s+", preg_split("/\s+/", self::mb_escape($search)));
+            $this->andWhere(["`name` REGEXP '(^|[\\\\s\",._-])". $search ."([\\\\s\",._-]|$)'"]);
+        }
+        if ($this->className != Category::class && $searchInText) {
+            if (!$strict) {
+                $str = " OR `text` REGEXP '(^|[\\\\s\",._-])". $search ."'";
+            } else {
+                $str = " OR `text` REGEXP '(^|[\\\\s\",._-])". $search ."([\\\\s\",._-]|$)'";
+            }
+            $pos = strrpos($this->where, "'");
+            $this->where = substr($this->where, 0, $pos+1) . $str . substr($this->where,$pos+1);
+        }
+
+        return $this;
+    }
+
+    /**
      * @method object|null fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3)
      */
     public function fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3)

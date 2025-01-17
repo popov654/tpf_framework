@@ -131,6 +131,11 @@ function getEntities(Request $request): Response
     if ($request->get('tags')) {
         $repository->filterByTags(json_decode($request->get('tags'), true), $request->get('findTag') == 'any');
     }
+    if ($request->get('search') && !preg_match("/^[@#]/", $request->get('search'))) {
+        $exactMatch = $request->get('match') == 'exact';
+        $searchInText = $request->get('searchInText') !== null && preg_match("/^true|1|$/", $request->get('searchInText'));
+        $repository->filterByName($request->get('search'), $exactMatch, $searchInText);
+    }
     $total = $repository->count();
 
     $repository->setOffset($request->get('offset') ?? 0);
