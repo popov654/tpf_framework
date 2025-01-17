@@ -50,6 +50,10 @@ class Repository extends Query
      */
     public function filterByName(string $search, ?bool $strict = false, ?bool $searchInText = false)
     {
+        if ($this->className == User::class) {
+            $this->andWhere(["`username` LIKE '". $search ."%'"]);
+            return;
+        }
         if (!$strict) {
             $search = implode("(\\\\s+\\\\w+)*\\\\s+", preg_split("/\s+/", self::mb_escape($search)));
             $this->andWhere(["`name` REGEXP '(^|[\\\\s\",._-])". $search ."'"]);

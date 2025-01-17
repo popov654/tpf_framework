@@ -131,10 +131,8 @@ function getEntities(Request $request): Response
     if ($request->get('tags')) {
         $repository->filterByTags(json_decode($request->get('tags'), true), $request->get('findTag') == 'any');
     }
-    if ($request->get('search') && !preg_match("/^[@#]/", $request->get('search'))) {
-        $exactMatch = $request->get('match') == 'exact';
-        $searchInText = $request->get('searchInText') !== null && preg_match("/^true|1|$/", $request->get('searchInText'));
-        $repository->filterByName($request->get('search'), $exactMatch, $searchInText);
+    if ($request->get('search')) {
+        search($request, $repository);
     }
     $total = $repository->count();
 
@@ -143,7 +141,7 @@ function getEntities(Request $request): Response
 
     $entities = $repository->fetch();
 
-    $fields = ['id', 'name', 'image', 'categories', 'tags', 'createdAt', 'modifiedAt'];
+    $fields = $className != User::class ? ['id', 'name', 'image', 'categories', 'tags', 'createdAt', 'modifiedAt'] : ['id', 'username', 'email', 'firstname', 'lastname'];
     $result = [];
     foreach ($entities as $entity) {
         $result[] = $entity->getFields($fields);
@@ -358,6 +356,24 @@ function deleteEntities(Request $request): Response
     }
 }
 
+function search(Request $request, Repository $repository)
+{
+    if (!preg_match("/^[@#]/", $request->get('search'))) {
+        $exactMatch = $request->get('match') == 'exact';
+        $searchInText = $request->get('searchInText') !== null && preg_match("/^true|1|$/", $request->get('searchInText'));
+        $repository->filterByName($request->get('search'), $exactMatch, $searchInText);
+    } else if (preg_match("/^#\d+$/", $request->get('search'))) {
+        $exactMatch = $request->get('match') == 'exact';
+        if ($exactMatch) {
+            $repository->andWhereEq(['id' => substr($request->get('search'), 1)]);
+        } else {
+            $repository->andWhere(["CONVERT(`id`, char) LIKE '" . substr($request->get('search'), 1) . "%'"]);
+        }
+    } else if (preg_match("/^@[\w\d_~]+$/", $request->get('search'))) {
+        $author = (new Repository(User::class))->findOneBy(['username' => substr($request->get('search'), 1)]);
+        $repository->andWhereEq(['author_id' => $author?->id]);
+    }
+}
 
 
 define('MAX_UPLOAD_SIZE', $TPF_CONFIG['max_upload_file_size'] ?? 1024*50*1024);
