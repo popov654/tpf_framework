@@ -56,18 +56,20 @@ class ORMTest extends BasicTest
         $data = [
             'username' => 'test',
             'password' => 'test',
-            'firstName' => 'Test',
-            'lastName' => '',
+            'firstname' => 'Test',
+            'lastname' => '',
             'isActive' => true,
             'registeredAt' => new \Datetime()
         ];
 
         /** @var User $user */
-        $user = User::fromArray($data);
+
+        $user = new User();
+        User::fillFromArray($user, $data);
         self::assertNotNull($user);
         self::assertNull($user->id);
         self::assertEquals('test', $user->username);
-        self::assertEquals('test', $user->password);
+        self::assertEquals('Test', $user->firstname);
         self::assertTrue($user->isActive);
     }
 }

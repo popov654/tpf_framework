@@ -127,7 +127,7 @@ class RouterTest extends BasicTest
         self::assertEquals(200, $response->getStatusCode());
         self::assertEquals('application/json', $response->headers->get('Content-Type'));
 
-        $posts = json_decode($response->getContent());
+        $posts = json_decode($response->getContent())->data;
 
         self::assertGreaterThanOrEqual(2, count($posts));
         self::assertGreaterThanOrEqual(2, $posts[0]->id);
@@ -141,7 +141,7 @@ class RouterTest extends BasicTest
         self::assertEquals(200, $response->getStatusCode());
         self::assertEquals('application/json', $response->headers->get('Content-Type'));
 
-        $posts = json_decode($response->getContent());
+        $posts = json_decode($response->getContent())->data;
 
         self::assertEquals(1, count($posts));
         self::assertEquals($data['posts'][0]->id, $posts[0]->id);
@@ -154,7 +154,7 @@ class RouterTest extends BasicTest
         self::assertEquals(200, $response->getStatusCode());
         self::assertEquals('application/json', $response->headers->get('Content-Type'));
 
-        $posts = json_decode($response->getContent());
+        $posts = json_decode($response->getContent())->data;
 
         self::assertEquals(1, count($posts));
         self::assertEquals($data['posts'][1]->id, $posts[0]->id);
@@ -179,7 +179,7 @@ class RouterTest extends BasicTest
 
         $schema = json_decode($response->getContent(), true);
         self::assertTrue(isset($schema['id']));
-        self::assertEquals('text', $schema['name']);
+        self::assertEquals('short_text', $schema['name']);
         self::assertEquals('text', $schema['text']);
         self::assertEquals('bool', $schema['isActive']);
         self::assertEquals('bool', $schema['isDeleted']);

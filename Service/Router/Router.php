@@ -19,10 +19,10 @@ class Router
         require_once PATH . '/vendor/' . VENDOR_PATH . '/Core/controllers.php';
 
         if ($request->getPathInfo() == '/') {
-            return self::__routeHome($request);
+            return self::routeHome($request);
         }
         if ($request->getPathInfo() == '/admin') {
-            return self::__routeAdmin($request);
+            return self::routeAdmin($request);
         }
         if ($response = self::processDefaultRoutes($request)) {
             return $response;
