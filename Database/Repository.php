@@ -250,7 +250,7 @@ class Repository extends Query
         $parts = explode("\\", $className);
         $name = lcfirst(array_pop($parts));
 
-        while ($parts[count($parts)-1] != 'Model') {
+        while (count($parts) > 0 && $parts[count($parts)-1] != 'Model') {
             $name = lcfirst(array_pop($parts)) . '_' . $name;
         }
 
