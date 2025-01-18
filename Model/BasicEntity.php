@@ -23,7 +23,7 @@ abstract class BasicEntity extends AbstractEntity
         global $TPF_REQUEST;
         $now = new \Datetime();
         parent::__construct();
-        if ($TPF_REQUEST['session']) {
+        if (isset($TPF_REQUEST['session'])) {
             $this->authorId = $TPF_REQUEST['session']->user->id;
         }
         $this->createdAt = $now;
