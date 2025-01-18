@@ -190,6 +190,11 @@ class Query
         global $dbal;
 
         $sql = $this->prepareSelect($select);
+
+        /** sort order */
+        $orderColumn = array_key_first($this->order);
+        $sql .= sprintf(" ORDER BY `%s` %s", $orderColumn, $this->order[$orderColumn]);
+
         $st = $dbal->query($sql);
 
         return $st->fetchAll(\PDO::FETCH_ASSOC);
