@@ -11,6 +11,8 @@ use Tpf\Model\User;
 use Tpf\Service\Auth\Auth;
 use Tpf\Service\Auth\PasswordHasher;
 use Tpf\Service\Router\Router;
+use Tpf\Service\Repository\UsersRepositoryService;
+
 
 class QueryTest extends BasicTest
 {
@@ -54,6 +56,24 @@ class QueryTest extends BasicTest
         self::assertEquals(0, count($result));
 
         $dbal->exec('ALTER TABLE `user` AUTO_INCREMENT=0');
+    }
+
+    public function testQueryWithCounters()
+    {
+        global $dbal;
+        dbConnect();
+
+        $data = Utils::seedBlogPosts();
+
+        try {
+            $usersRepositoryService = new UsersRepositoryService();
+            $result = $usersRepositoryService->getUsersWithCounters(['blog_post' => 'author_id'], ['id' => 1]);
+
+            self::assertEquals(1, count($result));
+            self::assertGreaterThanOrEqual(2, $result[0]['blog_post_count']);
+        } finally {
+            Utils::cleanupPostData($data);
+        }
     }
 
 }
