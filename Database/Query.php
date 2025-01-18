@@ -113,8 +113,7 @@ class Query
         $sql = $this->prepareSelect("*");
 
         /** sort order */
-        $orderColumn = array_key_first($this->order);
-        $sql .= sprintf(" ORDER BY `%s` %s", $orderColumn, $this->order[$orderColumn]);
+        $sql .= $this->getOrderExpr();
 
         /** offset & limit */
         if (!is_null($this->offset) || !is_null($this->limit)) {
@@ -192,8 +191,7 @@ class Query
         $sql = $this->prepareSelect($select);
 
         /** sort order */
-        $orderColumn = array_key_first($this->order);
-        $sql .= sprintf(" ORDER BY `%s` %s", $orderColumn, $this->order[$orderColumn]);
+        $sql .= $this->getOrderExpr();
 
         $st = $dbal->query($sql);
 
@@ -244,6 +242,19 @@ class Query
         }
 
         return $sql;
+    }
+
+    private function getOrderExpr(): string
+    {
+        if (empty($this->order)) {
+            return '';
+        }
+        $parts = [];
+        foreach ($this->order as $key => $value) {
+            $parts[] = sprintf("`%s` %s", $key, $value);
+        }
+
+        return ' ORDER BY ' . implode(', ', $parts);
     }
 
     public function update($fields)
