@@ -162,7 +162,7 @@ class Query
                         $targetFieldName = $matches[1];
                         $property = new ReflectionProperty($this->className, $targetFieldName);
                         $fullClassName = $property->getType()->getName();
-                        $className = @array_pop(explode('\\', $fullClassName));
+                        $className = end(explode('\\', $fullClassName));
 
                         if (in_array($className, ['User', 'Session', 'Category', 'Comment'])) {
                             require_once PATH . '/vendor/' . VENDOR_PATH . '/Model/' . $className . '.php';
