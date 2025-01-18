@@ -114,7 +114,7 @@ class RouterTest extends BasicTest
         } catch (\Exception $e) {
             $exception = $e;
         } finally {
-            $this->cleanupPostData($data);
+            Utils::cleanupPostData($data);
         }
 
         if ($exception != null) throw $exception;
@@ -158,28 +158,6 @@ class RouterTest extends BasicTest
 
         self::assertEquals(1, count($posts));
         self::assertEquals($data['posts'][1]->id, $posts[0]->id);
-    }
-
-    private function cleanupPostData($data)
-    {
-        global $dbal;
-
-        $postIds = array_map(function($el) {
-            return $el->id;
-        }, $data['posts']);
-        $categoryIds = array_map(function($el) {
-            return $el->id;
-        }, $data['categories']);
-        $commentIds = array_map(function($el) {
-            return $el->id;
-        }, $data['comments']);
-        (new Repository('\App\Model\Blog\Post'))->where(['`id` IN ('. implode(',', $postIds) .')'])->delete();
-        (new Repository(Category::class))->where(['`id` IN ('. implode(',', $categoryIds) .')'])->delete();
-        (new Repository(Comment::class))->where(['`id` IN ('. implode(',', $commentIds) .')'])->delete();
-
-        $dbal->exec('ALTER TABLE `blog_post` AUTO_INCREMENT=0');
-        $dbal->exec('ALTER TABLE `category` AUTO_INCREMENT=0');
-        $dbal->exec('ALTER TABLE `comment` AUTO_INCREMENT=0');
     }
 
     public function testGetPostSchema()

@@ -169,4 +169,26 @@ class Utils
 
         return $result;
     }
+
+    public static function cleanupPostData($data)
+    {
+        global $dbal;
+
+        $postIds = array_map(function($el) {
+            return $el->id;
+        }, $data['posts']);
+        $categoryIds = array_map(function($el) {
+            return $el->id;
+        }, $data['categories']);
+        $commentIds = array_map(function($el) {
+            return $el->id;
+        }, $data['comments']);
+        (new Repository('\App\Model\Blog\Post'))->where(['`id` IN ('. implode(',', $postIds) .')'])->delete();
+        (new Repository(Category::class))->where(['`id` IN ('. implode(',', $categoryIds) .')'])->delete();
+        (new Repository(Comment::class))->where(['`id` IN ('. implode(',', $commentIds) .')'])->delete();
+
+        $dbal->exec('ALTER TABLE `blog_post` AUTO_INCREMENT=0');
+        $dbal->exec('ALTER TABLE `category` AUTO_INCREMENT=0');
+        $dbal->exec('ALTER TABLE `comment` AUTO_INCREMENT=0');
+    }
 }
