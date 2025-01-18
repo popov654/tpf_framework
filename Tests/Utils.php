@@ -73,11 +73,12 @@ class Utils
 
         $result = [];
 
-        foreach ($posts as $postData) {
+        foreach ($posts as &$postData) {
             $post = new \App\Model\Blog\Post();
             $result[] = $post;
             AbstractEntity::fillFromArray($post, $postData);
             $post->save();
+            $postData['id'] = $post->id;
         }
 
         $comments = self::seedComments($posts);
@@ -141,7 +142,7 @@ class Utils
         $comments = [
             [
                 'type' => 'blog_post',
-                'entityId' => $posts[0]->id,
+                'entityId' => $posts[0]['id'],
                 'text' => 'Comment 1',
                 'authorId' => 1,
                 'createdAt' => $time,
@@ -149,7 +150,7 @@ class Utils
             ],
             [
                 'type' => 'blog_post',
-                'entityId' => $posts[0]->id,
+                'entityId' => $posts[0]['id'],
                 'text' => 'Comment 2',
                 'authorId' => 1,
                 'createdAt' => $time,
