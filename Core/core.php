@@ -85,8 +85,8 @@ function compile(string $string, $args = [], $suppressErrors = false): string{
         preg_match("/^\{\{\s*".$regexp."/", $matches[0], $m);
         $type = $m[1] ?? 'expr';
         $matches[1] = trim(preg_replace("/^".$regexp."/", "", $matches[1]));
-        $str = preg_replace('/(^|\b)(\~index\~|:index)(\b|$)/', '$index', $matches[1]);
-        $str = preg_replace('/(?<![\w\d\[\].\$\']|\{\{ include |\[\')([[:alpha:]_]\w*)(?![\w\(])/', "\$args['\\1']", $str);
+        $str = preg_replace('/\b(\~index\~|:index)\b/', '$index', $matches[1]);
+        $str = preg_replace('/("[^"]*"|\'[^\']*\'|\{\{ include )(*SKIP)(*F)|(?<![\w_\[\]\$.])([[:alpha:]_][\w\d_]*)(?![\w\(])/', "\$args['\\2']", $str);
         $str = preg_replace('/(?!\w|\])\.([[:alpha:]_]\w*)/', "['\\1']", $str);
         $str = '(' . $str . ')';
         $replacements[] = [$matches[0], $str, $type];
