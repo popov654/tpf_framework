@@ -39,6 +39,10 @@ class Query
     {
         $this->where = "";
 
+        if ($args !== [] && array_keys($args) !== range(0, count($args) - 1)) {
+            return $this->andWhereEq($args);
+        }
+
         return $this->andWhere($args);
     }
 
@@ -81,6 +85,16 @@ class Query
     {
         $cond = "";
         foreach ($args as $name => $value) {
+            if (is_array($value)) {
+                $value = $this->processChildWhere(null, $name, $value);
+                if ($value) {
+                    if (!empty($cond)) {
+                        $cond .= " AND ";
+                    }
+                    $cond .= $value;
+                }
+                continue;
+            }
             if (!empty($cond)) {
                 $cond .= " AND ";
             }
@@ -90,6 +104,61 @@ class Query
         $this->where .= (strlen($this->where) > 0 ? " AND " : "") . $cond;
 
         return $this;
+    }
+
+    protected function processChildWhere(?string $table, string $field, array $cond): ?string
+    {
+        $path = getFilePathByClass($this->className);
+        require_once $path;
+
+        $property = new ReflectionProperty($this->className, $field);
+        if ($property->getType()->isBuiltin()) {
+            throw new ORMException('Cannot apply composite condition to scalar field');
+        }
+        $type = $property->getType()->getName();
+        $tableName = Repository::getTableNameByClass($type);
+
+        if (!$table) {
+            $table = Repository::getTableNameByClass($this->className);
+        }
+
+        $colName = preg_replace_callback("/(?<!\b)[A-Z]/", function ($matches) {
+            return '_' . strtolower($matches[0]);
+        }, $field) . '_id';
+
+        $columns = array_values(array_filter(Repository::getColumnsByClass($this->className), function ($column) use ($colName) {
+            return $column['name'] == $colName;
+        }));
+
+        if (!empty($columns)) {
+            $where = [];
+            if (empty(array_filter($this->joinTables, function ($table) use ($tableName) {
+                return $table['table'] == $tableName;
+            }))) {
+                $this->joinTables[] = ['table' => $tableName, 'fromTable' => $table, 'column' => $colName, 'refColumn' => 'id'];
+            }
+
+            if ($cond !== [] && array_keys($cond) !== range(0, count($cond) - 1)) {
+                foreach ($cond as $column => $value) {
+                    if (is_array($value)) {
+                        $value = $this->processChildWhere($tableName, $column, $value);
+                        if ($value) {
+                            $where[] = $value;
+                        }
+                        continue;
+                    }
+                    $where[] = '`' . $tableName . '`.`' . $column . '` = ' . (is_numeric($value) ? $value : "'" . self::mb_escape($value) . "'");
+                }
+            } else {
+                foreach ($cond as $value) {
+                    $where[] = $value;
+                }
+            }
+
+            return implode(' AND ', $where);
+        }
+
+        return null;
     }
 
     public function sortBy(array $order): Query
@@ -172,11 +241,8 @@ class Query
                         $fullClassName = $property->getType()->getName();
                         $className = end(explode('\\', $fullClassName));
 
-                        if (in_array($className, ['User', 'Session', 'Category', 'Comment'])) {
-                            require_once PATH . '/vendor/' . VENDOR_PATH . '/Model/' . $className . '.php';
-                        } else {
-                            require_once PATH . '/src/Model/' . $className . '.php';
-                        }
+                        $path = getFilePathByClass($fullClassName);
+                        require_once $path;
 
                         $obj = new $fullClassName;
                         if ($obj instanceof AbstractEntity) {
@@ -192,9 +258,9 @@ class Query
         return $results;
     }
 
-    public function join(string $className, string $column, string $refColumn = 'id')
+    public function join(string $className, string $column, string $refColumn = 'id', ?string $fromTable = null)
     {
-        $this->joinTables[] = ['table' => Repository::getTableNameByClass($className), 'column' => $column, 'refColumn' => $refColumn];
+        $this->joinTables[] = ['table' => Repository::getTableNameByClass($className), 'fromTable' => $fromTable, 'column' => $column, 'refColumn' => $refColumn];
 
         return $this;
     }
@@ -250,7 +316,7 @@ class Query
 
         if (!empty($this->joinTables)) {
             foreach ($this->joinTables as $tableData) {
-                $sql.= " LEFT JOIN `" . $tableData['table'] . "` ON `" . $tableName . "`.`" . $tableData['column'] . "` = `" . $tableData['table'] . "`.`" . $tableData['refColumn'] . "`";
+                $sql.= " LEFT JOIN `" . $tableData['table'] . "` ON `" . ($tableData['fromTable'] ?? $tableName) . "`.`" . $tableData['column'] . "` = `" . $tableData['table'] . "`.`" . $tableData['refColumn'] . "`";
             }
         }
 

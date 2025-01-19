@@ -85,6 +85,33 @@ class QueryTest extends BasicTest
         }
     }
 
+    public function testChildWhere()
+    {
+        global $dbal;
+        dbConnect();
+
+        $data = Utils::seedBlogPosts();
+
+        try {
+            $query = new Query(\App\Model\Blog\Post::class);
+            $query->whereEq(['author' => ['username' => 'admin']]);
+
+            $result = $query->select();
+
+            self::assertGreaterThanOrEqual(2, count($result));
+            self::assertEquals('Second blog entry', $result[0]['name']);
+
+            $query->where(['author' => ['username' => 'test']]);
+
+            $result = $query->select();
+
+            self::assertEquals(0, count($result));
+
+        } finally {
+            Utils::cleanupPostData($data);
+        }
+    }
+
     public function testQueryWithCounters()
     {
         global $dbal;

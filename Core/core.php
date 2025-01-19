@@ -329,3 +329,14 @@ function getFullClassNameByType(string $type): string
 
     return $className;
 }
+
+function getFilePathByClass($className): string
+{
+    $pos = strpos($className, '\\Model') + strlen('\\Model') + 1;
+
+    if (in_array($className, ['User', 'Session', 'Category', 'Comment'])) {
+        return PATH . '/vendor/' . VENDOR_PATH . '/Model/' . $className . '.php';
+    } else {
+        return PATH . '/src/Model/' . str_replace('\\', '/', substr($className, $pos))  . '.php';
+    }
+}
