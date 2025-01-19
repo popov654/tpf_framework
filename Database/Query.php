@@ -16,6 +16,8 @@ class Query
     protected $where = null;
     protected array $order = ["id" => "desc"];
 
+    protected array $joinTables = [];
+
     public function __construct($className)
     {
         $this->className = $className;
@@ -190,6 +192,20 @@ class Query
         return $results;
     }
 
+    public function join(string $className, string $column, string $refColumn = 'id')
+    {
+        $this->joinTables[] = ['table' => Repository::getTableNameByClass($className), 'column' => $column, 'refColumn' => $refColumn];
+
+        return $this;
+    }
+
+    public function reset()
+    {
+        $this->joinTables = [];
+
+        return $this;
+    }
+
     public function select($select = '*'): array
     {
         global $dbal;
@@ -225,7 +241,18 @@ class Query
         $tableName = Repository::getTableNameByClass($this->className);
 
         /** base sql query */
+        if (!empty($this->joinTables)) {
+            $select = implode(', ', array_map(function($str) use($tableName) {
+                return "`" . $tableName . "`." . $str;
+            }, preg_split("/\s*,\s*/", $select)));
+        }
         $sql = "SELECT " . $select . " FROM `" . $tableName . "`";
+
+        if (!empty($this->joinTables)) {
+            foreach ($this->joinTables as $tableData) {
+                $sql.= " LEFT JOIN `" . $tableData['table'] . "` ON `" . $tableName . "`.`" . $tableData['column'] . "` = `" . $tableData['table'] . "`.`" . $tableData['refColumn'] . "`";
+            }
+        }
 
         /** where */
         if (!is_null($this->where)) {
@@ -250,7 +277,7 @@ class Query
         return $sql;
     }
 
-    private function getOrderExpr(): string
+    protected function getOrderExpr(): string
     {
         if (empty($this->order)) {
             return '';

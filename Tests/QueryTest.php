@@ -58,6 +58,33 @@ class QueryTest extends BasicTest
         $dbal->exec('ALTER TABLE `user` AUTO_INCREMENT=0');
     }
 
+    public function testJoinQuery()
+    {
+        global $dbal;
+        dbConnect();
+
+        $data = Utils::seedBlogPosts();
+
+        try {
+            $query = new Query(\App\Model\Blog\Post::class);
+            $query->join('user', 'author_id');
+
+            $result = $query->select();
+
+            self::assertGreaterThanOrEqual(2, count($result));
+            self::assertEquals('Second blog entry', $result[0]['name']);
+
+            $query->where(['`user`.`username` = \'test\'']);
+
+            $result = $query->select();
+
+            self::assertEquals(0, count($result));
+
+        } finally {
+            Utils::cleanupPostData($data);
+        }
+    }
+
     public function testQueryWithCounters()
     {
         global $dbal;
