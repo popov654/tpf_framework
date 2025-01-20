@@ -334,9 +334,11 @@ class Repository extends Query
                         break;
 
                     case "int":
-                        $columnFull = "`$name` INTEGER(11) NOT NULL DEFAULT 0";
+                        $columnFull = "`$name` INT NOT NULL";
                         if ($name == static::PRIMARY_COLUMN_KEY)
                             $columnFull .= " AUTO_INCREMENT";
+                        else
+                            $columnFull .= " DEFAULT 0";
                         break;
 
                     case "float":
@@ -356,6 +358,7 @@ class Repository extends Query
                         break;
 
                     case "json":
+                    case "array":
                         $columnFull = "`$name` JSON NOT NULL";
                         break;
 
