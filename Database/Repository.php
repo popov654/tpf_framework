@@ -249,6 +249,46 @@ class Repository extends Query
     }
 
     /**
+     * @method void applyDiff(array $diff)
+     */
+    public static function applyDiff(string $tableName, array $columns, array $diff, bool $dryRun = false): array
+    {
+        $result = [];
+        foreach ($diff as $entry) {
+            $del = $entry['deleteCount'];
+            while ($del > 0) {
+                $sql = "ALTER TABLE `$tableName` DROP COLUMN `" . $columns[$entry['position']]['Field'] . "`";
+                $result[] = $sql;
+                $del--;
+            }
+            foreach ($entry['add'] as $field) {
+                if ($entry['position'] > 0) {
+                    $before = $columns[$entry['position'] - 1]['Field'];
+                    $sql = "ALTER TABLE `$tableName` ADD COLUMN {$field['full']} AFTER `$before`";
+                } else if ($entry['position'] < count($columns) - 1) {
+                    $after = $columns[$entry['position'] + 1]['Field'];
+                    $sql = "ALTER TABLE `$tableName` ADD COLUMN {$field['full']} BEFORE `$after`";
+                } else {
+                    $sql = "ALTER TABLE `$tableName` ADD COLUMN {$field['full']}";
+                }
+                $result[] = $sql;
+            }
+        }
+
+        if (!$dryRun) {
+            try {
+                foreach ($result as $sql) {
+                    self::exec($sql);
+                }
+            } catch (\Exception $e) {
+                print $e->getMessage();
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * @method string getTableNameByClass(string $className)
      */
     public static function getTableNameByClass($className)
@@ -278,6 +318,8 @@ class Repository extends Query
     public static function getColumnsByClass($className): array
     {
         $columns = [];
+
+        require_once getFilePathByClass($className);
 
         $reflection = new \ReflectionClass($className);
         $code = file_get_contents($reflection->getFileName());

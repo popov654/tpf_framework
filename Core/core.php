@@ -1,6 +1,8 @@
 <?php
 
+use Tpf\Database\Query;
 use Tpf\Database\Repository;
+use Tpf\Database\ORMException;
 use Tpf\Model\User;
 
 define('VENDOR_PATH', 'tpf/framework');
@@ -337,6 +339,93 @@ function getFilesInDir(string $path, mixed $dir): array
     return $files;
 }
 
+function getEntitySchemaDiff(string $className = '*'): array
+{
+    $classes = $className == '*' ? getRealmEntityClasses() : [$className];
+    $result = [];
+    foreach ($classes as $class) {
+        $actualColumns = Repository::getColumnsByClass($className);
+        $existingColumns = getEntityTableColumns($className);
+
+        $actualColumns = array_values($actualColumns);
+        $i = 0; $j = 0;
+        $result[$class] = [];
+
+        function equals($col1, $col2) {
+            $repl = ['(' => '\\(', ')' => '\\)'];
+            return $col1['Field'] == $col2['name'] && preg_match("/^" . strtr($col1['Type'], $repl) . ".*/i", $col2['type']);
+        }
+
+        array_walk($actualColumns, function (&$el) {
+            $el['type'] = strtoupper(explode(' ', $el['full'])[1]);
+        });
+
+        while ($j < count($actualColumns) && $i < count($existingColumns)) {
+            if (equals($existingColumns[$i], $actualColumns[$j])) {
+                $i++; $j++;
+                continue;
+            }
+            $i1 = $i+1;
+            $res = false;
+            while ($i1 < count($existingColumns) && !($res = equals($existingColumns[$i1], $actualColumns[$j]))) {
+                $i1++;
+            }
+            if ($i1 < count($existingColumns) && $res) {
+                $result[$class][] = ['position' => $i, 'deleteCount' => $i1 - $i, 'add' => []];
+                $i = $i1+1;
+                $j++;
+                continue;
+            }
+            $j1 = $j+1;
+            $res = false;
+            while ($j1 < count($actualColumns) && !($res = equals($existingColumns[$i], $actualColumns[$j1]))) {
+                $j1++;
+            }
+            if ($j1 < count($actualColumns) && $res) {
+                $result[$class][] = ['position' => $i, 'deleteCount' => 0, 'add' => array_slice($actualColumns, $j, $j1-$j)];
+                $j = $j1+1;
+                $i++;
+                continue;
+            }
+            $n = 1;
+            $flag = false;
+            while ($i + $n < count($existingColumns)) {
+                $i1 = $i+$n;
+                $j1 = $j+1;
+                $res = false;
+                while ($j1 < count($actualColumns) && !($res = equals($existingColumns[$i1], $actualColumns[$j1]))) {
+                    $j1++;
+                }
+                if ($j1 < count($actualColumns) && $res) {
+                    $result[$class][] = ['position' => $i, 'deleteCount' => $i1 - $i, 'add' => array_slice($actualColumns, $j, $j1-$j)];
+                    $j = $j1+1;
+                    $i = $i1+1;
+                    $flag = true;
+                    break;
+                }
+                $n++;
+            }
+            // We should never get up to here
+            if (!$flag) throw new ORMException('Error while calculating diff for class ' . $class);
+        }
+    }
+
+    return $result;
+}
+
+function getEntityTableColumns($className): array
+{
+    $table = Repository::getTableNameByClass($className);
+
+    global $dbal;
+    dbConnect();
+
+    /** @var \PDO $dbal */
+    $columns = $dbal->query("SHOW COLUMNS FROM `" . Query::mb_escape($table) . "`")->fetchAll(\PDO::FETCH_ASSOC);
+
+    return $columns;
+}
+
 function getEntityType(string $type): ?string
 {
     global $TPF_REQUEST;
@@ -378,11 +467,12 @@ function getFullClassNameByType(string $type): string
 
 function getFilePathByClass($className): string
 {
-    $pos = strpos($className, '\\Model') + strlen('\\Model') + 1;
+    $className = preg_replace('/^Tpf\\\\Model\\\\/', '', $className);
 
     if (in_array($className, ['User', 'Session', 'Category', 'Comment'])) {
         return PATH . '/vendor/' . VENDOR_PATH . '/Model/' . $className . '.php';
     } else {
+        $pos = strpos($className, '\\Model') + strlen('\\Model') + 1;
         return PATH . '/src/Model/' . str_replace('\\', '/', substr($className, $pos))  . '.php';
     }
 }

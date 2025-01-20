@@ -103,4 +103,28 @@ class ORMTest extends BasicTest
         })));
         print_r($classNames);
     }
+
+    public function testGetEntitySchemaDiff()
+    {
+        $className = 'Tpf\\Model\\User';
+        $diffs = getEntitySchemaDiff($className);
+        $diff = $diffs[$className];
+
+        self::assertEquals(0, count($diff));
+
+        $diff[0] = ['position' => 6, 'deleteCount' => 0, 'add' => [['property' => 'bio', 'name' => 'bio', 'full' => '`bio` TEXT NOT NULL']]];
+
+        $tableName = Repository::getTableNameByClass($className);
+        $existingColumns = getEntityTableColumns($className);
+        $statements = Repository::applyDiff($tableName, $existingColumns, $diff, true);
+
+        self::assertEquals(1, count($statements));
+        self::assertEquals('ALTER TABLE `user` ADD COLUMN `bio` TEXT NOT NULL AFTER `email`', trim($statements[0]));
+
+        $diff[0] = ['position' => 6, 'deleteCount' => 1, 'add' => []];
+        $statements = Repository::applyDiff($tableName, $existingColumns, $diff, true);
+
+        self::assertEquals(1, count($statements));
+        self::assertEquals('ALTER TABLE `user` DROP COLUMN `role`', trim($statements[0]));
+    }
 }
