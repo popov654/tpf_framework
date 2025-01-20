@@ -303,21 +303,30 @@ function getRealmTableNames($realm = '*'): array
     }, getRealmEntityNames($realm));
 }
 
-function getRealmEntityClasses(string $realm): array
+function getRealmEntityClasses(string $realm = '*'): array
 {
-    if ($realm == '') return [];
-    $path = PATH . '/src/Model/' . $realm;
-    $dir = opendir($path);
-    $files = getFilesInDir($path, $dir);
-    $classes = array_map(function ($file) {
-        return preg_replace_callback('/\\\\[a-z]/', function ($matches) {
-            return strtoupper($matches[0]);
-        },
-        substr(
-            str_replace('/', '\\',
-                str_replace(PATH . '/src/', 'App/', $file)
-        ), 0, -4));
-    }, $files);
+    global $TPF_CONFIG;
+
+    $realms = $realm == '*' ? array_map(function ($el) {
+        return ucfirst($el);
+    }, array_keys($TPF_CONFIG['realms']) ?? []) : [ucfirst($realm)];
+
+    $classes = [];
+
+    foreach ($realms as $realm) {
+        $path = PATH . '/src/Model/' . $realm;
+        $dir = opendir($path);
+        $files = getFilesInDir($path, $dir);
+        $classes = array_merge($classes, array_map(function ($file) {
+            return preg_replace_callback('/\\\\[a-z]/', function ($matches) {
+                return strtoupper($matches[0]);
+            },
+                substr(
+                    str_replace('/', '\\',
+                        str_replace(PATH . '/src/', 'App/', $file)
+                    ), 0, -4));
+        }, $files));
+    }
 
     return $classes;
 }
@@ -343,18 +352,23 @@ function getEntitySchemaDiff(string $className = '*'): array
 {
     $classes = $className == '*' ? getRealmEntityClasses() : [$className];
     $result = [];
+
+    function equals($col1, $col2) {
+        $repl = ['(' => '\\(', ')' => '\\)'];
+        return $col1['Field'] == $col2['name'] && preg_match("/^" . strtr($col1['Type'], $repl) . ".*/i", $col2['type']);
+    }
+
     foreach ($classes as $class) {
-        $actualColumns = Repository::getColumnsByClass($className);
-        $existingColumns = getEntityTableColumns($className);
+        $actualColumns = Repository::getColumnsByClass($class);
+        try {
+            $existingColumns = getEntityTableColumns($class);
+        } catch (\PDOException $e) {
+            Repository::createTableByClass($class, null);
+        }
 
         $actualColumns = array_values($actualColumns);
         $i = 0; $j = 0;
         $result[$class] = [];
-
-        function equals($col1, $col2) {
-            $repl = ['(' => '\\(', ')' => '\\)'];
-            return $col1['Field'] == $col2['name'] && preg_match("/^" . strtr($col1['Type'], $repl) . ".*/i", $col2['type']);
-        }
 
         array_walk($actualColumns, function (&$el) {
             $el['type'] = strtoupper(explode(' ', $el['full'])[1]);
