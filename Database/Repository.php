@@ -319,7 +319,10 @@ class Repository extends Query
     {
         $columns = [];
 
-        require_once getFilePathByClass($className);
+        $path = getFilePathByClass($className);
+        require_once $path;
+
+        loadParentClasses($path);
 
         $reflection = new \ReflectionClass($className);
         $code = file_get_contents($reflection->getFileName());

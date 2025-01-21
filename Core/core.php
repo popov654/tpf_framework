@@ -470,8 +470,11 @@ function getFullClassNameByType(string $type): string
         $path = ucfirst(preg_replace_callback("/_[a-z]/", function ($match) {
             return '/' . strtoupper($match[0][1]);
         }, $type));
-        require_once PATH . '/src/Model/' . $path . '.php';
+
         $className = 'App\\Model\\' . str_replace('/', '\\', $path);
+        loadParentClasses(PATH . '/src/Model/' . $path . '.php');
+
+        require_once PATH . '/src/Model/' . $path . '.php';
     } else {
         $className = User::class;
     }
@@ -483,10 +486,36 @@ function getFilePathByClass($className): string
 {
     $className = preg_replace('/^Tpf\\\\Model\\\\/', '', $className);
 
-    if (in_array($className, ['User', 'Session', 'Category', 'Comment'])) {
+    if (in_array($className, ['User', 'Session', 'Category', 'Comment', 'AbstractEntity', 'BasicEntity'])) {
         return PATH . '/vendor/' . VENDOR_PATH . '/Model/' . $className . '.php';
     } else {
-        $pos = strpos($className, '\\Model') + strlen('\\Model') + 1;
-        return PATH . '/src/Model/' . str_replace('\\', '/', substr($className, $pos))  . '.php';
+        if (($pos = strpos($className, '\\Model\\')) !== false) $className = substr($className, $pos + strlen('\\Model\\'));
+        return PATH . '/src/Model/' . str_replace('\\', '/', $className)  . '.php';
+    }
+}
+
+function loadParentClasses($path)
+{
+    $content = file_get_contents($path);
+    preg_match("/^class\\s+(\\w+)\\s+(?:extends (\\w+))?\\s*{\\s*$/im", $content, $parent);
+
+    while ($parent) {
+        preg_match("/^namespace\\s+([a-z0-9\\\\_-]+);\\s*$/im", $content, $namespace);
+        preg_match("/^use\\s+(?:((?:[a-z0-9\\\\_-]+)\\\\)?" . $parent[2] . "|([a-z0-9\\\\_-]+)\\s+as\\s+". $parent[2] .");$/im", $content, $uses);
+        $className = $parent[2];
+        if ($uses) {
+            if ($uses[1]) {
+                $className = $uses[1] . $className;
+            } else {
+                $className = $uses[2];
+            }
+        }
+        $parentPath = getFilePathByClass($className);
+        if (!class_exists($className)) {
+            require_once $parentPath;
+        }
+
+        $content = file_get_contents($parentPath);
+        preg_match("/^class\\s+(\\w+)\\s+(?:extends (\\w+))?\\s*{\\s*$/im", $content, $parent);
     }
 }
