@@ -15,7 +15,7 @@ function configure(): array
         copy(PATH . '/vendor/' . VENDOR_PATH . '/config.sample.php', CONFIG_PATH);
     }
 
-    $tables = array_merge(['User', 'Session'], getRealmEntityNames());
+    $tables = array_merge(['User', 'Session'], getRealmTableNames());
 
     dbConnect();
     createDB($tables);
