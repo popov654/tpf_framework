@@ -163,6 +163,9 @@ class Router
         if ($request->getPathInfo() == '/db-check') {
             return checkDBConnection($request);
         }
+        if ($request->getPathInfo() == '/getAllEntityTypes') {
+            return getAllEntityTypes($request);
+        }
         if ($request->getPathInfo() == '/getSchema' || $request->getPathInfo() == '/getEntitySchema') {
             if (!$canEdit) {
                 return new Response('Access denied', 403);

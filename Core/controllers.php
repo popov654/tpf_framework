@@ -92,6 +92,20 @@ function checkDBConnection(Request $request): Response
     return new JsonResponse(['result' => $result]);
 }
 
+function getAllEntityTypes(Request $request): Response
+{
+    global $TPF_CONFIG;
+
+    $realms = array_keys($TPF_CONFIG['realms'] ?? []);
+    $result = [];
+
+    foreach ($realms as $realm) {
+        $result[$realm] = getRealmTableNames($realm);
+    }
+
+    return new JsonResponse($result);
+}
+
 function getEntitySchema(Request $request): Response
 {
     if (!$request->get('type')) {
