@@ -245,6 +245,8 @@ class Query
                         $path = getFilePathByClass($fullClassName);
                         require_once $path;
 
+                        loadParentClasses($path);
+
                         $obj = new $fullClassName;
                         if ($obj instanceof AbstractEntity) {
                             $fieldName = lcfirst($className);
