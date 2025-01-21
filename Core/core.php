@@ -501,14 +501,10 @@ function loadParentClasses($path)
 
     while ($parent) {
         preg_match("/^namespace\\s+([a-z0-9\\\\_-]+);\\s*$/im", $content, $namespace);
-        preg_match("/^use\\s+(?:((?:[a-z0-9\\\\_-]+)\\\\)?" . $parent[2] . "|([a-z0-9\\\\_-]+)\\s+as\\s+". $parent[2] .");$/im", $content, $uses);
-        $className = $parent[2];
+        preg_match("/^use\\s+(?:((?:[a-z0-9_-]+\\\\)*" . $parent[2] . ")|([a-z0-9\\\\_-]+)\\s+as\\s+". $parent[2] .");$/im", $content, $uses);
+        $className = ($namespace ? $namespace[1] . '\\' : '') . $parent[2];
         if ($uses) {
-            if ($uses[1]) {
-                $className = $uses[1] . $className;
-            } else {
-                $className = $uses[2];
-            }
+            $className = $uses[1] ?: $uses[2];
         }
         $parentPath = getFilePathByClass($className);
         if (!class_exists($className)) {
