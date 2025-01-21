@@ -72,4 +72,35 @@ class ORMTest extends BasicTest
         self::assertEquals('Test', $user->firstname);
         self::assertTrue($user->isActive);
     }
+
+    public function testGetTableNameByClass()
+    {
+        $className = 'App\\Model\\Blog\\Post';
+        $tableName = Repository::getTableNameByClass($className);
+        self::assertEquals('blog_post', $tableName);
+
+        $className = 'Tpf\\Model\\User';
+        $tableName = Repository::getTableNameByClass($className);
+        self::assertEquals('user', $tableName);
+    }
+
+    public function testGetColumnsByClass()
+    {
+        $className = 'Tpf\\Model\\User';
+        $columns = Repository::getColumnsByClass($className);
+        self::assertEquals(11, count($columns));
+        self::assertArrayHasKey('username', $columns);
+        self::assertArrayHasKey('password', $columns);
+        self::assertArrayHasKey('email', $columns);
+        self::assertEquals('is_active', $columns['isActive']['name']);
+    }
+
+    public function testGetRealmEntityNames()
+    {
+        $classNames = getRealmEntityNames();
+        self::assertEquals(count($classNames), count(array_filter($classNames, function ($el) {
+            return strpos($el, 'App\\Model\\') === 0;
+        })));
+        print_r($classNames);
+    }
 }

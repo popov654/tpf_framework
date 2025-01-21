@@ -282,20 +282,66 @@ function renameDB(string $newName, ?string $oldPrefix = null): void {
     $dbal->exec("DROP DATABASE `". $oldName ."`");
 }
 
-function getRealmEntityNames(): array {
+function getRealmEntityNames($realm = '*'): array
+{
     global $TPF_CONFIG;
     $result = [];
-    foreach ($TPF_CONFIG['realms'] as $name => $realm) {
-        $result[] = $name . '_' . ($realm['item'] ?? 'item');
+    foreach ($TPF_CONFIG['realms'] as $name => $params) {
+        if ($realm == '*' || $realm == $name) {
+            $result = array_merge($result, getRealmEntityClasses($name));
+        }
     }
     return $result;
+}
+
+function getRealmTableNames($realm = '*'): array
+{
+    return array_map(function($className) {
+        return Repository::getTableNameByClass($className);
+    }, getRealmEntityNames($realm));
+}
+
+function getRealmEntityClasses(string $realm): array
+{
+    if ($realm == '') return [];
+    $path = PATH . '/src/Model/' . $realm;
+    $dir = opendir($path);
+    $files = getFilesInDir($path, $dir);
+    $classes = array_map(function ($file) {
+        return preg_replace_callback('/\\\\[a-z]/', function ($matches) {
+            return strtoupper($matches[0]);
+        },
+        substr(
+            str_replace('/', '\\',
+                str_replace(PATH . '/src/', 'App/', $file)
+        ), 0, -4));
+    }, $files);
+
+    return $classes;
+}
+
+function getFilesInDir(string $path, mixed $dir): array
+{
+    $files = [];
+    while ($file = readdir($dir)) {
+        if ($file == '.' || $file == '..' || substr($file, strlen($file) - 4) != '.php') {
+            continue;
+        }
+        if (is_dir($path . '/' . $file)) {
+            $files = array_merge($files, getFilesInDir($path . '/' . $file));
+        } else {
+            $files[] = $path . '/' . $file;
+        }
+    }
+
+    return $files;
 }
 
 function getEntityType(string $type): ?string
 {
     global $TPF_REQUEST;
 
-    $tables = getRealmEntityNames();
+    $tables = getRealmTableNames();
 
     if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
         $tables[] = 'user';

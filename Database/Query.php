@@ -239,7 +239,8 @@ class Query
                         $targetFieldName = $matches[1];
                         $property = new ReflectionProperty($this->className, $targetFieldName);
                         $fullClassName = $property->getType()->getName();
-                        $className = end(explode('\\', $fullClassName));
+                        $parts = explode('\\', $fullClassName);
+                        $className = end($parts);
 
                         $path = getFilePathByClass($fullClassName);
                         require_once $path;
