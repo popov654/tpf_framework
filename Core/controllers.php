@@ -136,7 +136,9 @@ function getEntities(Request $request): Response
     $className = getFullClassNameByType($type);
 
     $repository = new Repository($className);
-    $repository->whereEq(['is_deleted' => $request->get('trash') !== null || $request->get('category') == 'trash']);
+    if ($type != 'user' && $type != 'session') {
+        $repository->whereEq(['is_deleted' => $request->get('trash') !== null || $request->get('category') == 'trash']);
+    }
     if ($request->get('category') !== null && $request->get('category') != 'trash') {
         $category = $request->get('category') != 0 ? $request->get('category') : '';
         $excludeSubcategories = $request->get('excludeSubCats') !== null;
