@@ -12,6 +12,7 @@ use Tpf\Model\User;
 use Tpf\Model\Category;
 use Tpf\Service\Auth\LoginService;
 use Tpf\Service\UsersService;
+use Tpf\Service\ErrorPage;
 
 function configureFramework(Request $request): Response
 {
@@ -63,12 +64,12 @@ function logout(Request $request): Response
 function activateUser(Request $request): Response
 {
     if (!$request->get('user')) {
-        return new Response("Bad request", 400);
+        return ErrorPage::createResponse(400, 'Missing `user` parameter');
     }
     /** @var User $user */
     $user = User::load($request->get('user'));
     if (!$user) {
-        return new Response("Bad request", 400);
+        return ErrorPage::createResponse(400, 'User not found');
     }
     if ($user->activationToken == $request->get('token')) {
         UsersService::activateUser($user);
