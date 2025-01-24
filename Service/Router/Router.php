@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Tpf\Model\User;
 use Tpf\Service\Logger;
+use Tpf\Service\ErrorPage;
 
 
 class Router
@@ -15,6 +16,8 @@ class Router
     {
         global $TPF_CONFIG, $TPF_REQUEST;
         $realm = $TPF_CONFIG['default_realm'] ?? 'blog';
+
+        $TPF_REQUEST['show_errors'] = !isset($TPF_CONFIG['debug']) || !$TPF_CONFIG['debug'];
 
         require_once PATH . '/vendor/' . VENDOR_PATH . '/Core/controllers.php';
 
@@ -48,11 +51,17 @@ class Router
                     }
                     if (strpos($value,'::')) {
                         list($className, $method) = explode('::', $value);
+                        if (!file_exists(PATH . '/src/Controller/' . $className . '.php')) {
+                            return ErrorPage::createResponse(404, 'Class ' . $className . ' not found');
+                        }
                         require_once PATH . '/src/Controller/' . $className . '.php';
                         if (strpos($className,'/')) {
                             $className = @array_pop(explode('/', $className));
                         }
                         $controller = new $className;
+                        if (!method_exists($controller, $method)) {
+                            return ErrorPage::createResponse(404, 'Method ' . $method . ' not found in class ' . $className);
+                        }
                         return $controller->$method($request);
                     }
                 }
@@ -79,7 +88,7 @@ class Router
             return self::__route($realm, $category, $subcategory, $id, $request);
         } else {
             Logger::error(new \Exception("Route not found for " . $request->getPathInfo()));
-            return new Response("Route not found error", 404);
+            return ErrorPage::makeResponse(404, "Route not found error");
         }
     }
 
@@ -92,7 +101,7 @@ class Router
     {
         global $TPF_CONFIG, $TPF_REQUEST;
         if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_CLIENT) {
-            return new Response("Access restricted", 403);
+            return ErrorPage::createResponse(403, "Access restricted");
         } else if (!isset($TPF_REQUEST['session'])) {
             return new RedirectResponse(($TPF_CONFIG['auth_url'] ?? '/login') . '?redirect_uri=admin');
         }
@@ -131,7 +140,7 @@ class Router
             if ($action != 'list' && !$isHome) {
                 if ($id === null) {
                     Logger::error(new \Exception("ID was not set for view controller"));
-                    return new Response("ID was not set for view controller", 404);
+                    return ErrorPage::makeResponse(404, "ID was not set for view controller");
                 }
                 $response = $controller->$action($request, $id);
             } else {
@@ -143,7 +152,7 @@ class Router
             return $response;
         } catch (\Exception $e) {
             Logger::error($e);
-            return new Response("Controller not found error", 404);
+            return ErrorPage::makeResponse(404, "Controller not found error");
         }
     }
 
