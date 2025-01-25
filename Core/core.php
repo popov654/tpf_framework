@@ -95,14 +95,14 @@ function compile(string $string, $args = [], $suppressErrors = false): string{
     $replacements = [];
 
     $content = preg_replace_callback('/\{\{\s*(.*?)\s*\}\}/', function ($matches) use ($content, &$replacements) {
-        $regexp = "((end)?(if|while)|endfor|set|for\s+([[:alpha:]_]\w*)\s+in\s+)";
+        $regexp = '((end|else\s+)?(if|while)|endfor|set|for\s+([[:alpha:]_]\w*)\s+in\s+)|else';
         preg_match("/^\{\{\s*".$regexp."/", $matches[0], $m);
-        $type = $m[1] ?? 'expr';
+        $type = (!empty($m) && $m[0] == 'else') ? $m[0] : ($m[1] ?? 'expr');
         $matches[1] = trim(preg_replace("/^".$regexp."/", "", $matches[1]));
-        $str = preg_replace('/\b(\~index\~|:index)\b/', '$index', $matches[1]);
+        $str = preg_replace('/(^|\s)(~index~|:index)(\s|$)/', '$index', $matches[1]);
         $str = preg_replace('/("[^"]*"|\'[^\']*\'|\{\{ include )(*SKIP)(*F)|(?<![\w_\[\]\$.])([[:alpha:]_][\w\d_]*)(?![\w\(])/', "\$args['\\2']", $str);
         $str = preg_replace('/(?!\w|\])\.([[:alpha:]_]\w*)/', "['\\1']", $str);
-        $str = '(' . $str . ')';
+        if (strpos($type, 'for ') !== 0) $str = '(' . $str . ')';
         $replacements[] = [$matches[0], $str, $type];
         return $matches[0];
     }, $content);
@@ -118,7 +118,7 @@ function compile(string $string, $args = [], $suppressErrors = false): string{
         $start = strpos($content, $r[0]);
         $end = $start + strlen($r[0]);
         $repl = "' . ". $r[1] . " . '";
-        if (preg_match('/^(if|for|while)/', $r[2])) {
+        if (preg_match('/^((else\s+)?if|for|while)/', $r[2])) {
             if (!str_starts_with($r[2], 'for')) {
                 $repl = "'; " . $r[2] . " (". $r[1] . ") echo '";
             } else {
@@ -133,6 +133,8 @@ function compile(string $string, $args = [], $suppressErrors = false): string{
             }
         } else if ($r[2] == 'set') {
             $repl = "'; " . $r[1] . "; echo '";
+        } else if ($r[2] == 'else') {
+            $repl = "'; else echo '";
         }
         $pos = $start + strlen($repl);
         $content = substr($content, 0, $start) . $repl . substr($content, $end);

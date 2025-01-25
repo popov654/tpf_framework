@@ -13,7 +13,7 @@
             This is a template test. The value of <strong>x</strong> is <strong>{{ x }}</strong>.
             The value of <strong>user.accounts[0]</strong> is <code>{{ user.accounts[0] }}</code>.
         </p>
-        {{ if x > 3 }}<p><strong>x</strong> > 3</p>{{ endif }}
+        {{ if x > 3 }}<p><strong>x</strong> > 3</p>{{ else }}<p><strong>x</strong> <= 3</p>{{ endif }}
         {# Comment #}
         {{ set y = 0 }}
         {{ for acc in user.accounts }}<div>{{ ~index~ }}. <code>{{ acc }}</code></div>{{ endfor }}
