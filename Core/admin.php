@@ -148,8 +148,8 @@
 				text-decoration: underline;
 			}
 			#pages {
-            height: calc(100vh - 160px);
-         }
+				height: calc(100vh - 160px);
+			}
 			#page-content {
 				display: flex;
 				height: 100%;
@@ -233,8 +233,8 @@
 				outline: none;
 			}
 			.toolbar > .hidden {
-            display: none;
-         }
+				display: none;
+			}
 			.btn.new {
 				background-image: url('/tpf/icons/file-new.svg');
 			}
@@ -257,8 +257,8 @@
 				background-image: url('/tpf/icons/check-none.svg');
 			}
 			.btn.restore {
-            background-image: url('/tpf/icons/restore.svg');
-         }
+				background-image: url('/tpf/icons/restore.svg');
+			}
 			
 			.btn_group.search {
 				margin-right: 4px;
@@ -407,6 +407,15 @@
 				width: 230px;
 			}
 			
+			.btn.btn-comments {
+				width: 30px;
+				height: 30px;
+				background: url('/tpf/icons/comments.svg') center / 30px no-repeat;
+				position: relative;
+				top: -40px;
+				left: -12px;
+			}
+			
 			.form-control.category-filter {
 				margin-right: 10px;
 				font-size: 14px;
@@ -506,7 +515,7 @@
 				border-radius: 2px;
 				margin: 3px;
 			}
-			.line .thumb.noimage, .no-edit .thumb.noimage {
+			.line .thumb.noimage {
 				background-size: 45px !important;
 			}
 			.form-group {
@@ -693,6 +702,34 @@
 			#changeCategoryDialog .buttons > * {
 				width: 92px;
 			}
+			#commentsDialog .list {
+				width: 640px;
+				height: 400px;
+				border: 1px solid #dadada;
+				border-radius: 4px;
+			}
+			.comment {
+				background: #e9f6fd;
+				border-radius: 8px;
+				border: 1px solid #d3d3d3;
+				padding: 24px 48px 22px 28px;
+				margin: 8px;
+				display: block;
+				width: max-content;
+			}
+			.comment .user {
+				display: flex;
+				align-items: center;
+				margin-bottom: 1rem;
+			}
+			.comment .thumb {
+				width: 32px;
+				height: 32px;
+			}
+			.comment .thumb, .comment .name {
+				display: inline-block;
+				margin: 0 10px 0 0;
+			}
 			
 			.xscroll_thumb_horz, .xscroll_thumb_vert {
 				background: #cdcdcd;
@@ -760,19 +797,56 @@
 					}
 				});
 
-                document.querySelectorAll('[data-action="settings"]').forEach(el => {
-                    el.addEventListener('click', openSettings);
-                });
+				document.querySelectorAll('.page .main').forEach(el => {
+					el.addEventListener('click', function(event) {
+						if (event.target.dataset.action == 'show-comments') {
+							openComments();
+						}
+					});
+				});
 
-                document.querySelectorAll('[data-action="logout"]').forEach(el => {
-                    el.addEventListener('click', function() {
-                        window.location.href = logout_url + '?hash=' + session_hash
-                    })
-                });
+				document.querySelectorAll('[data-action="settings"]').forEach(el => {
+				  el.addEventListener('click', openSettings);
+				});
 
-                function openSettings() {
+				document.querySelectorAll('[data-action="logout"]').forEach(el => {
+				  el.addEventListener('click', function() {
+						window.location.href = logout_url + '?hash=' + session_hash
+				  })
+				});
 
-                }
+				function openSettings() {
+
+				}
+				
+				function openComments() {
+					document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
+					document.getElementById('commentsDialog').style.display = 'block'
+					
+					loadComments()
+					
+					document.getElementById('modals').style.visibility = 'visible'
+					setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
+				}
+				
+				function loadComments() {
+					let id = document.getElementById('id').value
+					fetch('/getComments?type=' + window.contentType + '&id=' + id)
+						.then(res => res.json())
+						.then(res => {
+							let container = document.querySelector('#commentsDialog .list')
+							if (container.configured) container = container.children[0]
+							container.innerHTML = ''
+							for (let item of res.data) {
+								let comment = document.createElement('div')
+								comment.className = 'comment'
+								let fullName = [item.author.firstname, item.author.lastname].join(' ').trim()
+								comment.innerHTML += '<div class="user">' + generateThumbHtml(item.author) + '<div class="name">' + fullName + '</div></div>'
+								comment.innerHTML += '<div class="text">' + item.text.replace(/\r?\n/g, '<br>') + '</div>'
+								container.appendChild(comment)
+							}
+						})
+				}
 				
 				document.querySelectorAll('[data-action^="check-"]').forEach(el => {
 					el.addEventListener('click', function(event) {
@@ -908,9 +982,9 @@
 					}
 				});
 
-                document.querySelectorAll('.userpic').forEach(el => {
-                    el.innerHTML = generateThumbHtml(user);
-                });
+				document.querySelectorAll('.userpic').forEach(el => {
+					el.innerHTML = generateThumbHtml(user);
+				});
 				
 				Node.prototype.childIndex = function(el) {
 					return Array.prototype.indexOf.call(this.children, el);
@@ -1116,8 +1190,9 @@
 			
 			function generateThumbHtml(item) {
 				let image = item.image || item.image_url || item.cover || item.cover_url || item.photo || item.photo_url;
-				image = image ? imagePath + image : '/tpf/icons/images/no-photo.jpg';	
-				return '<div class="thumb' + (image == '/tpf/icons/images/no-photo.jpg' ? ' noimage' : '') + '" style="background: url(\'' + image + '\') center center / cover no-repeat"></div>';
+				let nophoto = item.username ? '/tpf/icons/userpic.svg' : '/tpf/icons/images/no-photo.jpg';
+				image = image ? imagePath + image : nophoto;
+				return '<div class="thumb' + (image == nophoto ? ' noimage' : '') + '" style="background: url(\'' + image + '\') center center / cover no-repeat"></div>';
 			}
 			
 			async function loadTypes() {
@@ -1222,6 +1297,11 @@
 							panel.className = 'actions float-end'
 							panel.innerHTML = '<button class="btn btn-primary" data-action="duplicate">Duplicate</button><button class="btn btn-primary" data-action="delete">Delete</button>'
 							input.parentNode.appendChild(panel)
+							
+							var btn = document.createElement('div')
+							btn.className = 'btn btn-comments float-end'
+							btn.setAttribute('data-action', 'show-comments')
+							input.parentNode.appendChild(btn)
 						}
 						
 						container.appendChild(row);
@@ -1266,10 +1346,10 @@
 						});
 					});
 					document.querySelectorAll('[data-action="batch-restore"]').forEach(function (el) {
-                  el.addEventListener('click', function(event) {
-                     batchRestore();
-                  });
-               });
+						el.addEventListener('click', function(event) {
+							batchRestore();
+						});
+					});
 					
 					formReady = true;
 				});
@@ -1540,7 +1620,7 @@
 				function unique(a) {
 					var seen = {};
 					return a.filter(function(item) {
-					   return seen.hasOwnProperty(item) ? false : (seen[item] = true);
+						return seen.hasOwnProperty(item) ? false : (seen[item] = true);
 					});
 				}
 			}
@@ -1703,15 +1783,15 @@
 		</script>
 		<script>
 			<?php $user = $TPF_REQUEST['session']->user ?? new User(); ?>let user = { username: '<?php echo $user->username; ?>', firstname: '<?php echo $user->firstname; ?>', lastname: '<?php echo $user->lastname; ?>', image: '<?php echo $user->photo; ?>' }
-            let logout_url = '<?php echo $TPF_CONFIG['logout_url'] ?? '/logout' ?>'; let session_hash = '<?php echo substr($TPF_REQUEST['session']->secureSessionId, -8); ?>';
+			let logout_url = '<?php echo $TPF_CONFIG['logout_url'] ?? '/logout' ?>'; let session_hash = '<?php echo substr($TPF_REQUEST['session']->secureSessionId, -8); ?>';
 		</script>
 	</head>
 	<body>
 		<div id="header">
 			<div class="logo">Admin panel</div>
 			<nav><a class="active" href="#content">Content</a><a href="#users">Users</a></nav>
-            <div class="spacer"></div>
-            <div id="menu">
+				<div class="spacer"></div>
+				<div id="menu">
 				<div class="header"><div class="userpic"></div><span>Administrator</span></div>
 				<div class="menu">
 					<li class="item" data-action="settings">Settings</li>
@@ -1750,9 +1830,9 @@
 							<button class="btn check-none" data-action="check-none"></button>
 						</div>
 						<div class="btn_separator hidden"></div>
-                  <div class="btn_group hidden">
-                     <button class="btn restore" data-action="batch-restore"></button>
-                  </div>
+						<div class="btn_group hidden">
+							<button class="btn restore" data-action="batch-restore"></button>
+						</div>
 						<div class="btn_group spacer"></div>
 						<div class="btn_group search">
 							<div class="search_wrap">
@@ -1763,7 +1843,7 @@
 								</div>
 								<div class="dropdown">
 									<div class="options"><span><input type="checkbox" class="form-control form-check-input" id="exact_match"><label for="exact_match">Exact match</label></span><span><input type="checkbox" class="form-control form-check-input" id="search_in_text"><label for="search_in_text">Search in text</label></span></div>
-									<div id="search_variants" class="list scrollable scroll_y"></div>
+									<div id="search_variants" class="list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="200"></div>
 								</div>
 							</div>
 						</div>
@@ -1816,6 +1896,10 @@
 				<div class="text">Select new category:</div>
 				<div><select data-role="set-category" name="categories" class="form-control"><option value="[]">None</option></select></div>
 				<div class="buttons"><div class="btn btn-primary btn-yes">OK</div><div class="btn btn-primary btn-no">Cancel</div></div>
+			</div>
+			<div class="dialog" id="commentsDialog">
+				<div class="list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="200"></div>
+				<div class="buttons"><div class="btn btn-primary btn-no">Close</div></div>
 			</div>
 		</div>
 	</body>
