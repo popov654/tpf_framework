@@ -4,110 +4,110 @@
 		<title>Admin panel</title>
 		<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" />
 		<link rel="stylesheet" href="style.css" />
-      <script src="bootstrap/js/bootstrap.min.js"></script>
+		<script src="bootstrap/js/bootstrap.min.js"></script>
 		<style>
-            body {
-                padding: 0;
-                margin: 0;
-                font-family: Segoe, Arial;
-            }
-            #header {
-                display: flex;
-                width: 100%;
-                height: 60px;
-                box-sizing: border-box;
-                padding: 0 0 0 16px;
-                background: #344d4a;
-                color: #f8f8f8;
-                gap: 60px;
-                align-items: stretch;
-                position: relative;
-                z-index: 10;
-                /* justify-content: space-between; */
-            }
-            #header .logo {
-                font-size: 28px;
-                line-height: 60px;
-                flex-shrink: 0;
-                white-space: nowrap;
-            }
-            #header nav {
-                height: 100%;
-                display: table;
-                overflow: hidden;
-            }
-            #header a {
-                color: #d5d6d8;
-            }
-            #header > nav > a {
-                position: relative;
-                margin: 4px 8px;
-                text-decoration: none;
-                text-align: center;
-                display: table-cell;
-                vertical-align: middle;
-                width: 90px;
-                height: 100%;
-            }
-            #header a.active {
-                color: #f3f3f3;
-                background: rgba(120, 130, 138, 0.3);
-            }
-            #header a.active::after {
-                display: block;
-                content: '';
-                width: 100%;
-                height: 2px;
-                background: #cce;
-                position: absolute;
-                bottom: 1px;
-                left: 0;
-            }
-            #header a:hover:not(.active), #menu:hover .header {
-                color: #e2e2e2;
-                background: rgba(110, 120, 128, 0.18);
-            }
-            #header > .spacer {
-                flex: 10 10 2000px;
-            }
-            #menu {
-                float: right;
-                position: relative;
-                margin: 0;
-                flex-shrink: 0;
-                height: 100%:
-            }
-            #menu .header {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                cursor: pointer;
-                height: 100%;
-                padding: 8px 20px 8px 8px;
-            }
-            #menu .header .thumb {
-                width: 32px;
-                height: 32px;
-            }
-            #menu .menu {
-                height: 0;
-                overflow: hidden;
-                background: #324a46;
-                color: #eee;
-                opacity: 1;
-                border-radius: 0 0 4px 4px;
-            }
-            #menu .menu .item {
-                padding: 4px 10px;
-                list-style-type: none;
-                cursor: default;
-            }
-            #menu .menu .item:hover {
-                background: #073;
-            }
-            #menu:hover .menu {
-                height: auto;
-            }
+			body {
+				padding: 0;
+				margin: 0;
+				font-family: Segoe, Arial;
+			}
+			#header {
+				display: flex;
+				width: 100%;
+				height: 60px;
+				box-sizing: border-box;
+				padding: 0 0 0 16px;
+				background: #344d4a;
+				color: #f8f8f8;
+				gap: 60px;
+				align-items: stretch;
+				position: relative;
+				z-index: 10;
+				/* justify-content: space-between; */
+			}
+			#header .logo {
+				font-size: 28px;
+				line-height: 60px;
+				flex-shrink: 0;
+				white-space: nowrap;
+			}
+			#header nav {
+				height: 100%;
+				display: table;
+				overflow: hidden;
+			}
+			#header a {
+				color: #d5d6d8;
+			}
+			#header > nav > a {
+				position: relative;
+				margin: 4px 8px;
+				text-decoration: none;
+				text-align: center;
+				display: table-cell;
+				vertical-align: middle;
+				width: 90px;
+				height: 100%;
+			}
+			#header a.active {
+				 color: #f3f3f3;
+				background: rgba(120, 130, 138, 0.3);
+			}
+			#header a.active::after {
+				display: block;
+				content: '';
+				width: 100%;
+				height: 2px;
+				background: #cce;
+				position: absolute;
+				bottom: 1px;
+				left: 0;
+			}
+			#header a:hover:not(.active), #menu:hover .header {
+				color: #e2e2e2;
+				background: rgba(110, 120, 128, 0.18);
+			}
+			#header > .spacer {
+				flex: 10 10 2000px;
+			}
+			#menu {
+				float: right;
+				position: relative;
+				margin: 0;
+				flex-shrink: 0;
+				height: 100%:
+			}
+			#menu .header {
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				cursor: pointer;
+				height: 100%;
+				padding: 8px 20px 8px 8px;
+			}
+			#menu .header .thumb {
+				width: 32px;
+				height: 32px;
+			}
+			#menu .menu {
+				height: 0;
+				overflow: hidden;
+				background: #324a46;
+				color: #eee;
+				opacity: 1;
+				border-radius: 0 0 4px 4px;
+			}
+			#menu .menu .item {
+				padding: 4px 10px;
+				list-style-type: none;
+				cursor: default;
+			}
+			#menu .menu .item:hover {
+				background: #073;
+			}
+			#menu:hover .menu {
+				height: auto;
+			}
 			#subheader {
 				width: 100%;
 				height: 60px;
@@ -232,6 +232,9 @@
 			.toolbar .btn:active {
 				outline: none;
 			}
+			.toolbar > .hidden {
+            display: none;
+         }
 			.btn.new {
 				background-image: url('/tpf/icons/file-new.svg');
 			}
@@ -253,6 +256,9 @@
 			.btn.check-none {
 				background-image: url('/tpf/icons/check-none.svg');
 			}
+			.btn.restore {
+            background-image: url('/tpf/icons/restore.svg');
+         }
 			
 			.btn_group.search {
 				margin-right: 4px;
@@ -1055,9 +1061,9 @@
 				line.classList.add('line');
 				line.dataset.id = item.id;
 				line.innerHTML = '<div><input type="checkbox" class="checkbox" id="ch' + item.id + '"><label for="ch' + item.id + '"></label></div>';
-				line.innerHTML += `<div>` + item.id + `</div>`;
-				line.innerHTML += `<div>` +  generateThumbHtml(item) + `</div>`;
-				line.innerHTML += `<div>${title}</div><div>${createdAt}</div>`;
+				line.innerHTML += '<div>' + item.id + '</div>';
+				line.innerHTML += '<div>' +  generateThumbHtml(item) + '</div>';
+				line.innerHTML += '<div>' + title + '</div><div>' + createdAt + '</div>';
 				return line;
 			}
 			
@@ -1083,19 +1089,35 @@
 							window.isSearch = true;
 						}
 						let data = 'data' in res ? res.data : res
-						document.querySelector('.main .form').style.visibility = catlist.value != 'trash' ? '' : 'hidden'
 						if (autoSelect && data.length > 0) {
 							container.children[0].click();
 						} else if (catlist.value != 'trash') {
 							newItem();
 						}
+						toggleTrashView();
 					});
+			}
+			
+			function toggleTrashView() {
+				let catlist = document.querySelector('.category-filter');
+				
+				let toolbarItemsToHide = [2, 3];
+				let toolbarItemsToShow = [5, 6];
+				
+				document.querySelector('.main .form').style.visibility = catlist.value != 'trash' ? '' : 'hidden';
+				let toolbar = document.querySelector('.page .aside .toolbar');
+				toolbarItemsToHide.forEach(index => {
+					toolbar.children[index].classList.toggle('hidden', catlist.value == 'trash');
+				})
+				toolbarItemsToShow.forEach(index => {
+					toolbar.children[index].classList.toggle('hidden', catlist.value != 'trash');
+				})
 			}
 			
 			function generateThumbHtml(item) {
 				let image = item.image || item.image_url || item.cover || item.cover_url || item.photo || item.photo_url;
 				image = image ? imagePath + image : '/tpf/icons/images/no-photo.jpg';	
-				return `<div class="thumb` + (image == '/tpf/icons/images/no-photo.jpg' ? ' noimage' : '') + `" style="background: url('${image}') center center / cover no-repeat"></div>`;
+				return '<div class="thumb' + (image == '/tpf/icons/images/no-photo.jpg' ? ' noimage' : '') + '" style="background: url(\'' + image + '\') center center / cover no-repeat"></div>';
 			}
 			
 			async function loadTypes() {
@@ -1243,6 +1265,11 @@
 							batchDelete();
 						});
 					});
+					document.querySelectorAll('[data-action="batch-restore"]').forEach(function (el) {
+                  el.addEventListener('click', function(event) {
+                     batchRestore();
+                  });
+               });
 					
 					formReady = true;
 				});
@@ -1524,21 +1551,45 @@
 				actionConfirm(message, function() {
 					let category = document.querySelector('.category-filter')?.value
 					fetch('/deleteItem?' + (category != 'trash' ? 'soft&' : '') + 'type=' + window.contentType + '&ids=[' + ids.join(',') + ']')
-					.then(res => res.json())
-					.then(res => {
-						let line = document.querySelector('.aside .list .line.selected')
-						let nextLineId = line.nextElementSibling ? line.nextElementSibling.dataset.id : null
-						reloadContent(false)
-							.then(() => {
-								if (nextLineId) {
-									line = document.querySelector('.aside .list .line[data-id="' + nextLineId + '"]')
-									if (line) line.click()
-								} else {
-									line = document.querySelector('.aside .list .line')
-									if (line) line.click()
-								}
-							})
-					})
+						.then(res => res.json())
+						.then(res => {
+							let line = document.querySelector('.aside .list .line.selected')
+							let nextLineId = line.nextElementSibling ? line.nextElementSibling.dataset.id : null
+							reloadContent(false)
+								.then(() => {
+									if (nextLineId) {
+										line = document.querySelector('.aside .list .line[data-id="' + nextLineId + '"]')
+										if (line) line.click()
+									} else {
+										line = document.querySelector('.aside .list .line')
+										if (line) line.click()
+									}
+								})
+						})
+					hideModals()
+				})
+			}
+			
+			function batchRestore() {
+				let ids = getSelectedIds();
+				let message = 'Are you sure you want to restore ' + getPlural(ids.length, 'item') + '?'
+				actionConfirm(message, function() {
+					fetch('/restoreItem?type=' + window.contentType + '&ids=[' + ids.join(',') + ']')
+						.then(res => res.json())
+						.then(res => {
+							let line = document.querySelector('.aside .list .line.selected')
+							let nextLineId = line.nextElementSibling ? line.nextElementSibling.dataset.id : null
+							reloadContent(false)
+								.then(() => {
+									if (nextLineId) {
+										line = document.querySelector('.aside .list .line[data-id="' + nextLineId + '"]')
+										if (line) line.click()
+									} else {
+										line = document.querySelector('.aside .list .line')
+										if (line) line.click()
+									}
+								})
+						})
 					hideModals()
 				})
 			}
@@ -1698,6 +1749,10 @@
 							<button class="btn check-all" data-action="check-all"></button>
 							<button class="btn check-none" data-action="check-none"></button>
 						</div>
+						<div class="btn_separator hidden"></div>
+                  <div class="btn_group hidden">
+                     <button class="btn restore" data-action="batch-restore"></button>
+                  </div>
 						<div class="btn_group spacer"></div>
 						<div class="btn_group search">
 							<div class="search_wrap">

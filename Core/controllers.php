@@ -354,6 +354,33 @@ function deleteEntities(Request $request): Response
     }
 }
 
+function restoreEntities(Request $request): Response
+{
+    if (!$request->get('type')) {
+        return new JsonResponse(['error' => 'Bad request'], 400);
+    }
+
+    $type = getEntityType($request->get('type'));
+    if (!$type) {
+        return new JsonResponse(['error' => 'Unknown type'], 400);
+    }
+
+    $className = getFullClassNameByType($type);
+
+    try {
+        $repository = new Repository($className);
+
+        global $dbal;
+
+        $ids = json_decode($request->get('ids'), true);
+        $dbal->exec('UPDATE `' . $type . '` SET `is_deleted`=0 WHERE `id` IN ('. implode(',', $ids) .')');
+
+        return new JsonResponse(['result' => 'ok'], 200);
+    } catch (Exception $e) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    }
+}
+
 function search(Request $request, Repository $repository)
 {
     if (!preg_match("/^[@#]/", $request->get('search'))) {
