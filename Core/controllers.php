@@ -223,7 +223,7 @@ function getEntityComments(Request $request): Response
     $commentsRepository = new Repository(Comment::class);
     $commentsRepository->setOffset($request->get('offset') ?? 0);
     $commentsRepository->setLimit($request->get('count') ?? 100);
-    $comments = $commentsRepository->whereEq(['type' => $type, 'entity_id' => $entity->id])->fetch();
+    $comments = $commentsRepository->whereEq(['type' => $type, 'entity_id' => $entity->id])->fetch(true, 1);
 
     $total = $commentsRepository->count();
 
@@ -232,7 +232,9 @@ function getEntityComments(Request $request): Response
     $result = [];
 
     foreach ($comments as $comment) {
-        $result[] = $comment->getFields($fields);
+        $data = $comment->getFields($fields);
+        $data['author'] = $comment->author->getFields(['id', 'username', 'firstname', 'lastname', 'photo']);
+        $result[] = $data;
     }
 
     return new JsonResponse(['total' => $total, 'data' => $result], 200);
