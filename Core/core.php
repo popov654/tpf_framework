@@ -24,8 +24,12 @@ class AppKernel
     {
         global $TPF_REQUEST;
 
-        $TPF_REQUEST['session'] = Auth::authenticate($request);
-        $response = Router::route($request);
+        try {
+            $TPF_REQUEST['session'] = Auth::authenticate($request);
+            $response = Router::route($request);
+        } catch (Throwable $t) {
+            return ErrorPage::createResponse(500, $t->getMessage());
+        }
 
         return $response;
     }
