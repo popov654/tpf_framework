@@ -449,7 +449,7 @@ function getEntityType(string $type): ?string
     $tables = getRealmTableNames();
 
     if (isset($TPF_REQUEST['session']) && $TPF_REQUEST['session']->user->role == User::ROLE_ADMIN) {
-        $tables[] = 'user';
+        $tables = array_merge($tables, ['user', 'session', 'comment', 'category']);
     }
 
     if (!in_array($type, $tables)) {
@@ -468,18 +468,18 @@ function getEntityType(string $type): ?string
 function getFullClassNameByType(string $type): string
 {
     $class = ucfirst(preg_replace("/^(([a-z0-9])+_)*/", "", $type));
-    if ($class != 'User') {
-        $path = ucfirst(preg_replace_callback("/_[a-z]/", function ($match) {
-            return '/' . strtoupper($match[0][1]);
-        }, $type));
-
-        $className = 'App\\Model\\' . str_replace('/', '\\', $path);
-        loadParentClasses(PATH . '/src/Model/' . $path . '.php');
-
-        require_once PATH . '/src/Model/' . $path . '.php';
-    } else {
-        $className = User::class;
+    if (class_exists('Tpf\\Model\\' . $class)) {
+        return 'Tpf\\Model\\' . $class;
     }
+
+    $path = ucfirst(preg_replace_callback("/_[a-z]/", function ($match) {
+        return '/' . strtoupper($match[0][1]);
+    }, $type));
+
+    $className = 'App\\Model\\' . str_replace('/', '\\', $path);
+    loadParentClasses(PATH . '/src/Model/' . $path . '.php');
+
+    require_once PATH . '/src/Model/' . $path . '.php';
 
     return $className;
 }
