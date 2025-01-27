@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 use Tpf\Database\Repository;
 use Tpf\Model\AbstractEntity;
+use Tpf\Model\Comment;
 use Tpf\Model\User;
 use Tpf\Model\Category;
 use Tpf\Service\Auth\LoginService;
@@ -223,6 +224,8 @@ function getEntityComments(Request $request): Response
     $commentsRepository->setLimit($request->get('count') ?? 100);
     $comments = $commentsRepository->whereEq(['type' => $type, 'entity_id' => $entity->id])->fetch();
 
+    $total = $commentsRepository->count();
+
     $fields = array_keys($className::getSchema('comment'));
 
     $result = [];
@@ -231,7 +234,7 @@ function getEntityComments(Request $request): Response
         $result[] = $comment->getFields($fields);
     }
 
-    return new JsonResponse($result, 200);
+    return new JsonResponse(['total' => $total, 'data' => $result], 200);
 }
 
 function getCategoriesByType(Request $request): Response

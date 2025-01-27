@@ -501,7 +501,7 @@ function loadParentClasses($path)
 
     while ($parent) {
         preg_match("/^namespace\\s+([a-z0-9\\\\_-]+);\\s*$/im", $content, $namespace);
-        preg_match("/^use\\s+(?:((?:[a-z0-9_-]+\\\\)*" . $parent[2] . ")|([a-z0-9\\\\_-]+)\\s+as\\s+". $parent[2] .");$/im", $content, $uses);
+        preg_match("/^use\\s+(?:((?:[a-z0-9_-]+\\\\)*" . $parent[2] . ")|([a-z0-9\\\\_-]+)\\s+as\\s+". $parent[2] .");\\s*$/im", $content, $uses);
         $className = ($namespace ? $namespace[1] . '\\' : '') . $parent[2];
         if ($uses) {
             $className = $uses[1] ?: $uses[2];

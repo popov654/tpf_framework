@@ -11,6 +11,7 @@ class User extends AbstractEntity
      * @property int $id
      * @property string $username
      * @property string $password
+     * @property string $photo
      * @property string $firstname
      * @property string $lastname
      * @property string $email

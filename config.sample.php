@@ -1,7 +1,7 @@
 <?php
     $TPF_CONFIG = [
         'secret' => 'KFSO2fKMyHao+Ll9RPGOrqvGXVvulds0rkvJv3ysAzojDCUg',
-        'default_realm' => 'Shop',
+        'default_realm' => 'shop',
         'authentication_method' => 'password',
         'password_encryption' => 'PASSWORD_BCRYPT',
         'password_encryption_strength' => '11',
