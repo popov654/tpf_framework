@@ -250,7 +250,7 @@ class Query
                         $obj = new $fullClassName;
                         if ($obj instanceof AbstractEntity) {
                             $fieldName = lcfirst($className);
-                            $entity->{$targetFieldName} = $fullClassName::load($value, $loadEmbedded, --$maxDepth);
+                            $entity->{$targetFieldName} = $fullClassName::load($value, $loadEmbedded, $maxDepth-1);
                         }
                     }
                 }
