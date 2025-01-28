@@ -185,4 +185,45 @@ class RouterTest extends BasicTest
 
         Utils::endSession(1, $accessToken);
     }
+
+    public function testGetPostComments()
+    {
+        global $TPF_REQUEST, $dbal;
+        $TPF_REQUEST = [];
+
+        dbConnect();
+
+        require_once PATH . '/src/Model/Entity.php';
+        require_once PATH . '/src/Model/Blog/Post.php';
+
+        $data = Utils::seedBlogPosts();
+
+        $exception = null;
+
+        try {
+
+            $request = Request::create('/getComments?type=blog_post&id=' . $data['posts'][0]->id);
+            $response = Router::route($request);
+
+            self::assertEquals(200, $response->getStatusCode());
+            self::assertEquals('application/json', $response->headers->get('Content-Type'));
+
+            $comments = json_decode($response->getContent(), true);
+            $comments['data'] = array_reverse($comments['data']);
+
+            self::assertEquals(count($data['comments']), $comments['total']);
+            foreach ($data['comments'] as $index => $comment) {
+                $actualComment = new Comment();
+                Comment::fillFromArray($actualComment, $comments['data'][$index]);
+                self::assertEquals($comment, $actualComment);
+            }
+
+        } catch (\Exception $e) {
+            $exception = $e;
+        } finally {
+            Utils::cleanupPostData($data);
+        }
+
+        if ($exception != null) throw $exception;
+    }
 }
