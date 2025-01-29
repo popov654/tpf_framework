@@ -999,20 +999,27 @@
 					document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
 					document.getElementById('commentsDialog').style.display = 'block'
 					
+					comments_offset = 0
 					loadComments()
 					
 					document.getElementById('modals').style.visibility = 'visible'
 					setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
 				}
 				
-				function loadComments() {
+				var loadingComments = false
+				
+				function loadComments(append = false) {
+					let offset = comments_offset
+					let count = comments_count
 					let id = document.getElementById('id').value
-					fetch('/getComments?type=' + window.contentType + '&id=' + id)
+					loadingComments = true
+					fetch('/getComments?type=' + window.contentType + '&id=' + id + '&offset=' + offset + '&count=' + count)
 						.then(res => res.json())
 						.then(res => {
+							loadingComments = false
 							let container = document.querySelector('#commentsDialog .list')
 							if (container.configured) container = container.children[0]
-							container.innerHTML = ''
+							if (!append) container.innerHTML = ''
 							for (let item of res.data) {
 								let comment = document.createElement('div')
 								comment.className = 'comment'
@@ -1024,8 +1031,24 @@
 								comment.innerHTML += '<div class="text">' + item.text.replace(/\r?\n/g, '<br>') + '</div>'
 								container.appendChild(comment)
 							}
+							comments_offset += res.data.length
 						})
 				}
+				
+				let commentsList = document.querySelector('#commentsDialog .list')
+				if (commentsList) {
+					let lastPos = 0
+					commentsList.addEventListener('scroll', debounce(function(event) {
+						let target = event.target
+						if (!loadingComments && target.scrollTop != lastPos && target.scrollHeight - target.scrollTop - target.clientHeight < 60) {
+							loadComments(true)
+							lastPos = target.scrollTop
+						}
+					}, 800))
+				}
+				
+				var comments_offset = 0
+				var comments_count = 10
 				
 				document.querySelectorAll('[data-action^="check-"]').forEach(el => {
 					el.addEventListener('click', function(event) {
@@ -1039,6 +1062,10 @@
 					var last = 0
 					var busy = false
 					return function() {
+						if (timer) {
+							clearTimeout(timer)
+						}
+						timer = null
 						if (Date.now() - last > timeout) {
 							if (busy && !timer) {
 								timer = setTimeout(arguments.callee, timeout, ...arguments)
@@ -1046,10 +1073,6 @@
 							}
 							busy = true
 							try {
-								if (timer) {
-									clearTimeout(timer)
-								}
-								timer = null
 								func.apply(this, arguments)
 							} catch (e) {
 								console.log(e)
@@ -1062,8 +1085,7 @@
 								timer = null
 							}
 						} else {
-							timer = setTimeout(arguments.callee, Math.max(0, timeout - (Date.now() - last)), ...arguments)
-							return
+							if (!timer) timer = setTimeout(arguments.callee, Math.max(0, timeout - (Date.now() - last)), ...arguments)
 						}
 					}
 					var timer = null
