@@ -221,6 +221,12 @@ class Router
             }
             return restoreEntities($request);
         }
+        if ($request->getPathInfo() == '/editComment') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            return editComment($request);
+        }
         if ($request->getPathInfo() == '/upload' && $request->getMethod() == 'POST') {
             return uploadFile($request);
         }

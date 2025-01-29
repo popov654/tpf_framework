@@ -240,6 +240,25 @@ function getEntityComments(Request $request): Response
     return new JsonResponse(['total' => $total, 'data' => $result], 200);
 }
 
+function editComment(Request $request): Response
+{
+    global $dbal;
+
+    $text = $request->get('text');
+    if (preg_match("/^application\/json/", $request->headers->get('Content-Type'))) {
+        $data = json_decode($request->getContent());
+        $text = $data->text ?? $data->value;
+    }
+
+    $comment = Comment::load($request->get('id'));
+    if ($comment) {
+        $comment->text = Repository::mb_escape($text);
+        $comment->save();
+    }
+
+    return new JsonResponse(['result' => 'ok'], 200);
+}
+
 function getCategoriesByType(Request $request): Response
 {
     if (!$request->get('type')) {

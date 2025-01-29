@@ -712,10 +712,23 @@
 				background: #e9f6fd;
 				border-radius: 8px;
 				border: 1px solid #d3d3d3;
-				padding: 24px 48px 22px 28px;
+				padding: 24px 68px 22px 28px;
 				margin: 8px;
 				display: block;
 				width: max-content;
+				position: relative;
+			}
+			.comment.deleted {
+				background: #f1d5d5;
+				border-color: #c8b8b8;
+			}
+			.comment .actions {
+				position: absolute;
+				top: 6px;
+				right: 10px;
+				width: 75px;
+				white-space: nowrap;
+				text-align: right;
 			}
 			.comment .user {
 				display: flex;
@@ -729,6 +742,47 @@
 			.comment .thumb, .comment .name {
 				display: inline-block;
 				margin: 0 10px 0 0;
+			}
+			.comment .actions .btn {
+				opacity: 0.75;
+			}
+			.comment .actions .btn:hover {
+				opacity: 1;
+			}
+			.comment .btn.edit, .comment .btn.delete, .comment .btn.restore {
+				display: inline-block;
+				width: 24px;
+				height: 24px;
+			}
+			.comment .btn.edit {
+				background: url('/tpf/icons/edit-comment.svg') center / 24px no-repeat;
+			}
+			.comment .btn.delete {
+				background: url('/tpf/icons/delete-comment.svg') center / 22px no-repeat;
+			}
+			.comment .btn.restore {
+				background: url('/tpf/icons/restore-comment.svg') center / 22px no-repeat;
+				display: none;
+			}
+			.comment.deleted .btn.restore {
+				display: inline-block;
+			}
+			.comment textarea {
+				display: block;
+			}
+			.comment .link {
+				font-size: 12px;
+				position: relative;
+				top: 8px;
+				left: calc(100% - 48px);
+				width: 45px;
+				text-align: right;
+				display: inline-block;
+				color: #5f6f83;
+				cursor: pointer;
+			}
+			.comment .link:hover {
+				text-decoration: underline;
 			}
 			
 			.xscroll_thumb_horz, .xscroll_thumb_vert {
@@ -804,15 +858,137 @@
 						}
 					});
 				});
+				
+				initCommentsEditor()
+				
+				function initCommentsEditor() {
+					let container = document.querySelector('#commentsDialog .list')
+					if (container.configured) container = container.children[0]
+					container.addEventListener('click', function(event) {
+						if (event.target.classList.contains('edit')) {
+							editComment(event.target.parentNode.parentNode)
+						} else if (event.target.classList.contains('delete')) {
+							deleteComment(event.target.parentNode.parentNode)
+						} else if (event.target.classList.contains('restore')) {
+							restoreComment(event.target.parentNode.parentNode)
+						} else if (event.target.dataset.action == 'cancel-edit') {
+							cancelEdit(event.target.parentNode)
+						}
+					});
+				}
+				
+				function editComment(comment) {
+					if (comment.isEditing) {
+						let textBlock = comment.querySelector('.text')
+						let textarea = comment.querySelector('textarea')
+						let link = textarea ? textarea.nextElementSibling : null
+						if (textarea) {
+							let content = textarea.value
+							let oldValue = textarea.oldValue ?? content
+							cancelEdit(comment)
+							textBlock.innerHTML = textarea.value.replace(/\r?\n/g, '<br>')
+							
+							fetch('/editComment?id=' + comment.dataset.id, {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify({ text : content })
+							})
+							.then(res => {
+								if (res.status >= 400) throw {};
+								return res.json()
+							})
+							.catch(() => {
+								textBlock.innerHTML = oldValue.replace(/\r?\n/g, '<br>')
+							})
+						}
+						return
+					}
+					let textarea = document.createElement('textarea')
+					let textBlock = comment.querySelector('.text')
+					textarea.style.width = '100%'
+					textarea.style.marginRight = '-42px'
+					textarea.style.marginBottom = '-17px'
+					textarea.style.height = textBlock.clientHeight + 10 + 'px'
+					textarea.style.padding = '4px 4px 3px 4px'
+					textarea.style.position = 'relative'
+					textarea.style.left = '-5px'
+					textarea.style.top = '-5px'
+					textarea.value = textBlock.innerHTML.replace('<br>', '\n')
+					textarea.oldValue = textarea.value
+					textBlock.style.display = 'none'
+					if (textBlock.nextElementSibling) {
+						comment.insertBefore(textarea, textBlock.nextElementSibling)
+					} else {
+						comment.appendChild(textarea)
+					}
+					
+					let cancel = document.createElement('span')
+					cancel.className = 'link'
+					cancel.setAttribute('data-action', 'cancel-edit')
+					cancel.innerHTML = 'Cancel'
+					if (textarea.nextElementSibling) {
+						comment.insertBefore(cancel, textarea.nextElementSibling)
+					} else {
+						comment.appendChild(cancel)
+					}
+					
+					textarea.focus()
+					comment.isEditing = true
+				}
+				
+				function cancelEdit(comment) {
+					if (!comment.isEditing) return
+					let textBlock = comment.querySelector('.text')
+					let textarea = comment.querySelector('textarea')
+					let link = textarea ? textarea.nextElementSibling : null
+					if (textarea) {
+						textBlock.innerHTML = textarea.oldValue.replace(/\r?\n/g, '<br>')
+						comment.removeChild(textarea)
+						comment.removeChild(link)
+						textBlock.style.display = ''
+						comment.isEditing = false
+					}
+				}
+				
+				function deleteComment(comment) {
+					let soft = !comment.classList.contains('deleted')
+					fetch('/deleteItem?type=comment&ids=[' + comment.dataset.id + ']' + (soft ? '&soft' : ''))
+					.then(res => {
+						if (res.status >= 400) throw {};
+						return res.json()
+					})
+					.catch(() => {
+						comment.classList.remove('deleted')
+					})
+					if (soft) {
+						comment.classList.add('deleted')
+					} else {
+						loadComments()
+					}
+				}
+				
+				function restoreComment(comment) {
+					fetch('/restoreItem?type=comment&ids=[' + comment.dataset.id + ']')
+					.then(res => {
+						if (res.status >= 400) throw {};
+						return res.json()
+					})
+					.catch(() => {
+						comment.classList.add('deleted')
+					})
+					comment.classList.remove('deleted')
+				}
 
 				document.querySelectorAll('[data-action="settings"]').forEach(el => {
-				  el.addEventListener('click', openSettings);
+					el.addEventListener('click', openSettings);
 				});
 
 				document.querySelectorAll('[data-action="logout"]').forEach(el => {
-				  el.addEventListener('click', function() {
+					el.addEventListener('click', function() {
 						window.location.href = logout_url + '?hash=' + session_hash
-				  })
+					})
 				});
 
 				function openSettings() {
@@ -840,7 +1016,10 @@
 							for (let item of res.data) {
 								let comment = document.createElement('div')
 								comment.className = 'comment'
+								if (item.isDeleted) comment.classList.add('deleted')
+								comment.dataset.id = item.id
 								let fullName = [item.author.firstname, item.author.lastname].join(' ').trim()
+								comment.innerHTML += '<div class="actions"><div class="btn edit"></div><div class="btn delete"></div><div class="btn restore"></div></div>'
 								comment.innerHTML += '<div class="user">' + generateThumbHtml(item.author) + '<div class="name">' + fullName + '</div></div>'
 								comment.innerHTML += '<div class="text">' + item.text.replace(/\r?\n/g, '<br>') + '</div>'
 								container.appendChild(comment)
