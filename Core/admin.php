@@ -419,8 +419,8 @@
 			.form-control.category-filter {
 				margin-right: 10px;
 				font-size: 14px;
-				min-width: 200px;
-				max-width: 250px;
+				min-width: 190px;
+				max-width: 210px;
 			}
 			.pagination .first, .pagination .last {
 				width: 28px;
