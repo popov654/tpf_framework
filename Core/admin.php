@@ -1415,7 +1415,7 @@
 			
 			async function getSchema(type) {
 				if (cache.schemas[type]) {
-					return cache.schemas[type];
+					return Promise.resolve(cache.schemas[type]);
 				} else {
 					return await fetch('/getSchema?type=' + type)
 					.then(res => res.json())
@@ -1431,7 +1431,7 @@
 			}
 			
 			async function buildForm(type) {
-				getSchema(type).then(res => {
+				return getSchema(type).then(res => {
 					let container = document.querySelector('#page-content .main .form');
 					container.innerHTML = '';
 					console.log(res);
