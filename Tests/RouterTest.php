@@ -2,6 +2,7 @@
 
 namespace Tpf\Tests;
 
+use AppKernel;
 use Symfony\Component\HttpFoundation\Request;
 use Tpf\Database\Repository;
 use Tpf\Model\Session;
@@ -64,8 +65,7 @@ class RouterTest extends BasicTest
 
             $request = Request::create('/getEntity?type=user&id=1');
             $request->headers->add(['Authorization' => 'Bearer ' . $accessToken]);
-            $TPF_REQUEST['session'] = Auth::authenticate($request);
-            $response = Router::route($request);
+            $response = AppKernel::process($request);
 
             self::assertEquals(200, $response->getStatusCode());
             self::assertEquals('application/json', $response->headers->get('Content-Type'));
@@ -171,8 +171,7 @@ class RouterTest extends BasicTest
 
         $request = Request::create('/getSchema?type=blog_post');
         $request->headers->add(['Authorization' => 'Bearer ' . $accessToken]);
-        $TPF_REQUEST['session'] = Auth::authenticate($request);
-        $response = Router::route($request);
+        $response = AppKernel::process($request);
 
         self::assertEquals(200, $response->getStatusCode());
         self::assertEquals('application/json', $response->headers->get('Content-Type'));

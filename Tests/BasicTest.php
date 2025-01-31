@@ -18,7 +18,5 @@ abstract class BasicTest extends TestCase
         }
         require_once './config.sample.php';
         require_once './Core/core.php';
-
-        $TPF_CONFIG['db']['database'] = 'framework';
     }
 }

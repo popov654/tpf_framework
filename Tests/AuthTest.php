@@ -2,6 +2,7 @@
 
 namespace Tpf\Tests;
 
+use AppKernel;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -61,8 +62,7 @@ class AuthTest extends BasicTest
         //$request->cookies->add(['ssid' => $session->secureSessionId . '; Expires=' . date(DATE_RFC7231, time() + 3600 * 24)]);
         $_COOKIE[$TPF_CONFIG['authentication_methods']['cookie']['cookie_name']] = $session->secureSessionId;
 
-        $TPF_REQUEST['session']  = Auth::authenticate($request);
-        $response = Router::route($request);
+        $response = AppKernel::process($request);
 
         /** @var \PDO $dbal */
         $dbal->exec('ALTER TABLE `'. $TPF_CONFIG['db']['database'] .'`.`session` AUTO_INCREMENT=0;');
