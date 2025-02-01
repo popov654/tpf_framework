@@ -48,6 +48,7 @@
 				vertical-align: middle;
 				width: 90px;
 				height: 100%;
+				cursor: default;
 			}
 			#header a.active {
 				 color: #f3f3f3;
@@ -519,8 +520,11 @@
 				border-radius: 2px;
 				margin: 3px;
 			}
-			.line .thumb.noimage {
+			.line:not(.user) .thumb.noimage {
 				background-size: 45px !important;
+			}
+			.line.user .thumb {
+				background-size: 95% !important;
 			}
 			.form-group {
 				margin: 8px auto;
@@ -565,6 +569,11 @@
 			input[readonly] {
 				background: #efefef;
 				color: #666;
+			}
+			.password-form-field {
+				resize: none;
+				line-height: 1.8;
+				padding: 4px 5px;
 			}
 			
 			.form-control.no-edit {
@@ -909,7 +918,7 @@
 					link.onclick = function(event) {
 						event.preventDefault();
 						localStorage.currentPage = link.getAttribute('href');
-						updatePage();
+						// updatePage();
 					}
 				});
 				let sublinks = document.querySelectorAll('#subheader-content > .link')
@@ -1532,6 +1541,12 @@
 						}
 					}
 				});
+				
+				document.querySelectorAll('#header nav > a').forEach(link => {
+					link.addEventListener('click', function() {
+						if (this.dataset.href) changeSection(this.dataset.href);
+					});
+				});
 
 				document.querySelectorAll('.userpic').forEach(el => {
 					el.innerHTML = generateThumbHtml(user);
@@ -1571,6 +1586,34 @@
 					XScroll.initAll();
 				}, 50)
 			});
+			
+			
+			
+			async function changeSection(section) {
+				if (section.charAt(0) == '#') {
+					section = section.slice(1)
+				}
+				window.page = 1
+				
+				document.getElementById('subheader-content').style.display = (section == 'content' ? '' : 'none')
+				
+				if (section == 'content') {
+					let link = document.querySelector('#subheader-content .item_types .link.active') || document.querySelector('#subheader-content .item_types .link')
+					let type = link && link.dataset.value || 'blog_post'
+					window.contentType = type
+					await buildForm(window.contentType)
+					await reloadContent()
+				}
+				else if (section == 'users') {
+					window.contentType = 'user'
+					await buildForm(window.contentType)
+					await reloadContent()
+				}
+				
+				document.querySelectorAll('#header nav > a').forEach(link => {
+					link.classList.toggle('active', link.dataset.href == '#' + section)
+				})
+			}
 			
 			async function reloadContent(autoSelect = true, resetPage = false) {
 				return loadContent(window.contentType, pageSize * (window.page - 1), pageSize, autoSelect);
@@ -1709,8 +1752,17 @@
 				let createdAt = item.createdAt ? formatDate(new Date(item.createdAt), 'DD.MM.YYYY HH:mm:ss') : '-'
 				let modifiedAt = item.modifiedAt ? formatDate(new Date(item.modifiedAt), 'DD.MM.YYYY HH:mm:ss') : '-'
 				
+				if (contentType == 'user') {
+					title = [item.firstname, item.lastname].join(' ').trim()
+					createdAt = item.registeredAt ? formatDate(new Date(item.registeredAt), 'DD.MM.YYYY HH:mm:ss') : '-'
+					modifiedAt = item.lastLoginAt ? formatDate(new Date(item.lastLoginAt), 'DD.MM.YYYY HH:mm:ss') : '-'
+				}
+				
 				let line = document.createElement('div');
 				line.classList.add('line');
+				if (contentType == 'user') {
+					line.classList.add('user');
+				}
 				line.dataset.id = item.id;
 				line.innerHTML = '<div><input type="checkbox" class="checkbox" id="ch' + item.id + '"><label for="ch' + item.id + '"></label></div>';
 				line.innerHTML += '<div>' + item.id + '</div>';
@@ -1845,8 +1897,11 @@
 						input.className = input.type != 'checkbox' ? 'form-control' : 'form-control form-check-input';
 						let label = document.createElement('label');
 						label.htmlFor = input.id;
+						
+						let fieldName = field;
 						field = field.replace(/([a-z])([A-Z])/g, '$1 $2');
-						label.textContent = field[0].toUpperCase() + field.slice(1);
+						field = field[0].toUpperCase() + field.slice(1);
+						label.textContent = field;
 						
 						if (label.textContent == 'Categories') label.textContent = 'Category';
 						
@@ -1869,6 +1924,9 @@
 							let viewbox = document.createElement('div');
 							viewbox.className = 'form-control no-edit';
 							input.parentNode.appendChild(viewbox);
+						}
+						if (contentType == 'user' && field.match(/(Registered|Last Login) At/)) {
+							input.readOnly = true;
 						}
 						if (field == 'id') {
 							var panel = document.createElement('div')
@@ -1897,37 +1955,6 @@
 					
 					initPhotoPickers();
 					initTagsWidgets();
-					
-					document.querySelectorAll('[data-action="new"]').forEach(function (el) {
-						el.addEventListener('click', function(event) {
-							newItem();
-						});
-					});
-					document.querySelectorAll('[data-action="duplicate"]').forEach(function (el) {
-						el.addEventListener('click', function(event) {
-							duplicateItem();
-						});
-					});
-					document.querySelectorAll('[data-action="move"]').forEach(function (el) {
-						el.addEventListener('click', function(event) {
-							openSetCategoryDialog();
-						});
-					});
-					document.querySelectorAll('[data-action="delete"]').forEach(function (el) {
-						el.addEventListener('click', function(event) {
-							deleteItem();
-						});
-					});
-					document.querySelectorAll('[data-action="batch-delete"]').forEach(function (el) {
-						el.addEventListener('click', function(event) {
-							batchDelete();
-						});
-					});
-					document.querySelectorAll('[data-action="batch-restore"]').forEach(function (el) {
-						el.addEventListener('click', function(event) {
-							batchRestore();
-						});
-					});
 					
 					formReady = true;
 				});
@@ -2063,7 +2090,19 @@
 										widget.lastElementChild.textContent = ''
 									}
 								}
-							} else if (input.type != 'checkbox' && input.name in res) {
+							} else if (contentType == 'user' && input.name.match(/^(registered|lastLogin)At$/)) {
+								input.value = Intl ? new Intl.DateTimeFormat('en-GB', {
+									dateStyle: 'short',
+									timeStyle: 'long',
+									timeZone: 'GMT',
+								}).format(Date.parse(res[input.name])) : res[input.name].replace('T', ' ');
+								input.disabled = true
+							} else if (contentType == 'user' && input.name == 'password') {
+								input.value = '**********'
+								input.classList.add('password-form-field')
+								input.rows = 1
+								input.disabled = true
+							}else if (input.type != 'checkbox' && input.name in res) {
 								input.value = res[input.name]
 							} else if (input.type == 'checkbox' && input.name in res) {
 								input.checked = !!res[input.name]
@@ -2116,6 +2155,10 @@
 				for (let input of inputs) {
 					if (!input.name || input.disabled) continue
 					let value = input.value
+					if (contentType == 'user' && input.name == 'password') {
+						if (!input.hiddenValue) continue
+						value = input.hiddenValue
+					}
 					if (input.type == 'checkbox') {
 						input.value = input.checked ? 1 : 0
 					}
@@ -2422,7 +2465,7 @@
 	<body>
 		<div id="header">
 			<div class="logo">Admin panel</div>
-			<nav><a class="active" href="#content">Content</a><a href="#users">Users</a></nav>
+			<nav><a class="active" data-href="#content">Content</a><a data-href="#users">Users</a></nav>
 				<div class="spacer"></div>
 				<div id="menu">
 				<div class="header"><div class="userpic"></div><span>Administrator</span></div>
