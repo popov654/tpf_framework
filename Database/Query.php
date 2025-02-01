@@ -18,6 +18,8 @@ class Query
 
     protected array $joinTables = [];
 
+    public static array $identityMap = [];
+
     public function __construct($className)
     {
         $this->className = $className;
@@ -246,15 +248,24 @@ class Query
                         $parts = explode('\\', $fullClassName);
                         $className = end($parts);
 
+                        if (isset(self::$identityMap[$fullClassName]) && isset(self::$identityMap[$fullClassName][$value])) {
+                            $entity->{$targetFieldName} = self::$identityMap[$fullClassName][$value];
+                            continue;
+                        }
+
                         $path = getFilePathByClass($fullClassName);
                         require_once $path;
 
                         loadParentClasses($path);
-
                         $obj = new $fullClassName;
                         if ($obj instanceof AbstractEntity) {
                             $fieldName = lcfirst($className);
-                            $entity->{$targetFieldName} = $fullClassName::load($value, $loadEmbedded, $maxDepth-1);
+                            $obj = $fullClassName::load($value, $loadEmbedded, $maxDepth-1);
+                            $entity->{$targetFieldName} = $obj;
+                            if (!isset(self::$identityMap[$fullClassName])) {
+                                self::$identityMap[$fullClassName] = [];
+                            }
+                            self::$identityMap[$fullClassName][$obj->id] = $obj;
                         }
                     }
                 }
