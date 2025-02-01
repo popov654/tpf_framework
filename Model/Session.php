@@ -15,7 +15,7 @@ class Session extends AbstractEntity
      * @property datetime $expiredAt
      */
 
-    public int | null $id;
+    public ?int $id;
     public string $type;
     public int $userId;
     public User $user;

@@ -17,7 +17,7 @@ class Comment extends AbstractEntity
      * @property datetime $modifiedAt
      */
 
-    public int $id;
+    public ?int $id;
     public string $type;
     public int $entityId;
     public string $text;
@@ -29,4 +29,12 @@ class Comment extends AbstractEntity
     public \Datetime $createdAt;
     public \Datetime $modifiedAt;
 
+
+    public function __construct()
+    {
+        parent::__construct();
+        $now = new \DateTime();
+        $this->createdAt = $now;
+        $this->modifiedAt = $now;
+    }
 }

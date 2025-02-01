@@ -17,7 +17,7 @@ class Category extends AbstractEntity
      * @property datetime $modifiedAt
      */
 
-    public int $id;
+    public ?int $id;
     public string $type;
     public int $parent;
     public string $name;
@@ -28,4 +28,12 @@ class Category extends AbstractEntity
     public \Datetime $createdAt;
     public \Datetime $modifiedAt;
 
+    
+    public function __construct()
+    {
+        parent::__construct();
+        $now = new \DateTime();
+        $this->createdAt = $now;
+        $this->modifiedAt = $now;
+    }
 }
