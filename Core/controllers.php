@@ -152,20 +152,29 @@ function getEntities(Request $request): Response
     if ($request->get('search')) {
         search($request, $repository);
     }
-    $total = $repository->count();
 
-    $repository->setOffset($request->get('offset') ?? 0);
-    $repository->setLimit($request->get('count') ?? 25);
-
-    $entities = $repository->fetch();
-
-    $fields = $className != User::class ? ['id', 'name', 'image', 'categories', 'tags', 'createdAt', 'modifiedAt'] : ['id', 'username', 'email', 'firstname', 'lastname'];
-    $result = [];
-    foreach ($entities as $entity) {
-        $result[] = $entity->getFields($fields);
+    if ((int) $request->get('offset') < 0) {
+        $request->query->set('offset', 0);
     }
 
-    return new JsonResponse(['total' => $total, 'data' => $result], 200);
+    try {
+        $total = $repository->count();
+
+        $repository->setOffset($request->get('offset') ?? 0);
+        $repository->setLimit($request->get('count') ?? 25);
+
+        $entities = $repository->fetch();
+
+        $fields = $className != User::class ? ['id', 'name', 'image', 'categories', 'tags', 'createdAt', 'modifiedAt'] : ['id', 'username', 'email', 'firstname', 'lastname', 'registeredAt', 'lastLoginAt'];
+        $result = [];
+        foreach ($entities as $entity) {
+            $result[] = $entity->getFields($fields);
+        }
+
+        return new JsonResponse(['total' => $total, 'data' => $result], 200);
+    } catch (\Exception $e) {
+        return new JsonResponse(['error' => $e->getMessage(), 'data' => null], 400);
+    }
 }
 
 function getEntity(Request $request): Response
