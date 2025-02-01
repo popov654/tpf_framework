@@ -189,7 +189,7 @@ function arrayToCode($value): string
                 return arrayToCode($value->toArray());
             }
             if (isset($value->toString)) {
-                return "'" . $value->toString() . "'";
+                return "'" . str_replace("'", "\\'", $value->toString()) . "'";
             }
             $result = '';
             foreach (get_class_vars(get_class($value)) as $key => $val) {
@@ -206,7 +206,7 @@ function arrayToCode($value): string
         if (is_numeric($value)) {
             return $value;
         }
-        return "'" . $value . "'";
+        return "'" . str_replace("'", "\\'", $value) . "'";
     }
     $result = '';
     foreach ($value as $key => $val) {
