@@ -1,5 +1,5 @@
-        <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" />
-        <script src="bootstrap/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="/tpf/bootstrap/css/bootstrap.min.css" />
+        <script src="/tpf/bootstrap/js/bootstrap.min.js"></script>
         <style>
             h1, .h1 {
                 font-size: 2.1rem;
