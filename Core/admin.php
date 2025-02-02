@@ -1084,6 +1084,15 @@
 					})
 					comment.classList.remove('deleted')
 				}
+				
+				document.querySelector('.main').addEventListener('click', function (event) {
+					if (event.target.dataset.action == 'delete') {
+						deleteItem();
+					}
+					else if (event.target.dataset.action == 'duplicate') {
+						duplicateItem();
+					}
+				});
 
 				document.querySelectorAll('[data-action="settings"]').forEach(el => {
 					el.addEventListener('click', openSettings);
@@ -1544,6 +1553,8 @@
 				
 				updateItemTypes(types);
 				
+				initToolbar()
+				
 				await buildForm(window.contentType);
 				await loadCategories(window.contentType);
 				
@@ -1639,6 +1650,29 @@
 						link.classList.toggle('active', link.dataset.value == window.contentType)
 					})
 				}
+			}
+			
+			function initToolbar() {
+				document.querySelectorAll('[data-action="new"]').forEach(function (el) {
+					el.addEventListener('click', function(event) {
+						newItem();
+					});
+				});
+				document.querySelectorAll('[data-action="move"]').forEach(function (el) {
+					el.addEventListener('click', function(event) {
+						openSetCategoryDialog();
+					});
+				});
+				document.querySelectorAll('[data-action="batch-delete"]').forEach(function (el) {
+					el.addEventListener('click', function(event) {
+						batchDelete();
+					});
+				});
+				document.querySelectorAll('[data-action="batch-restore"]').forEach(function (el) {
+					el.addEventListener('click', function(event) {
+						batchRestore();
+					});
+				});
 			}
 			
 			var TaskManager = {
