@@ -176,6 +176,9 @@ class Router
         if ($request->getPathInfo() == '/db-check') {
             return checkDBConnection($request);
         }
+        if ($request->getPathInfo() == '/getUsersRoles') {
+            return getUsersRoles($request);
+        }
         if ($request->getPathInfo() == '/getAllEntityTypes') {
             return getAllEntityTypes($request);
         }

@@ -55,4 +55,9 @@ class UsersService
         $user->isActive = false;
         $user->save();
     }
+
+    public static function getRoles(): array
+    {
+        return [User::ROLE_CLIENT => 'Client', User::ROLE_EDITOR => 'Editor', User::ROLE_ADMIN => 'Admin'];
+    }
 }
