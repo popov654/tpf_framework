@@ -22,13 +22,18 @@ class AppKernel
 {
     public static function process(Request $request): Response
     {
-        global $TPF_REQUEST;
+        global $TPF_CONFIG, $TPF_REQUEST;
 
         try {
-            $TPF_REQUEST['session'] = Auth::authenticate($request);
+            $TPF_REQUEST['show_errors'] = !isset($TPF_CONFIG['debug']) || !$TPF_CONFIG['debug'];
+            $TPF_REQUEST['session'] = null;
+            if (!preg_match("/\/tpf\/([^\/]+\/)*(css|js|icons)\/([^\/]+\/)*((?:[a-z0-9_-]+\.)+)(\\2|gif|png|jpg|webp|svg)$/i", $request->getPathInfo())) {
+                $TPF_REQUEST['session'] = Auth::authenticate($request);
+            }
             $response = Router::route($request);
         } catch (Throwable $t) {
-            return ErrorPage::createResponse(500, $t->getMessage());
+            $message = $t->getMessage() . '<div style="font-size: 0.8em">in file ' . $t->getFile() . ' on line ' . $t->getLine() . '</div>';
+            return ErrorPage::createResponse(500, $message);
         }
 
         return $response;

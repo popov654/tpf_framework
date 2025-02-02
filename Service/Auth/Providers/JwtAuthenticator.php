@@ -31,6 +31,7 @@ class JwtAuthenticator implements AuthenticatorInterface
                 $token = $request->cookies->get($headerName);
             }
         }
+        if (empty($token)) return null;
         if ($data = JwtService::verifyJwtToken($token)) {
             /** @var User $user */
             $session = new Session;
