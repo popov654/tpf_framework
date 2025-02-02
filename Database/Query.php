@@ -145,6 +145,12 @@ class Query
                 try {
                     $property = new ReflectionProperty($this->className, $column['property']);
                     $type = $property->getType()->getName();
+                    if (strtolower($type) == 'string' && !$property->getType()->allowsNull() && $value === null) {
+                        $value = '';
+                    }
+                    if (preg_match("/^int|float$/", strtolower($type)) && !$property->getType()->allowsNull() && $value === null) {
+                        $value = 0;
+                    }
                     if (strtolower($type) == 'datetime' && $value != null) {
                         $value = DateTime::createFromFormat("Y-m-d H:i:s", $value);
                     }
