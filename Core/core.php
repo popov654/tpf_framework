@@ -21,6 +21,10 @@ function render($template, $args = [], $suppressErrors = false): string
     $isExpired = $cachedTemplatePath != 'auto' && is_numeric($cacheTime) &&
                     file_exists($cachedTemplatePath) && time() - filemtime($cachedTemplatePath) > (int) $cacheTime;
 
+    if ($cacheTime == 'auto' && filemtime(getTemplatePath($template, $suppressErrors)) > filemtime($cachedTemplatePath)) {
+        $isExpired = true;
+    }
+
     if (!$isExpired && file_exists($cachedTemplatePath)) {
         $content = file_get_contents($cachedTemplatePath);
     } else {
@@ -39,15 +43,23 @@ function render($template, $args = [], $suppressErrors = false): string
     return $result;
 }
 
-function doRender($template, $args = [], $suppressErrors = false): string
+function getTemplatePath(string $template, bool $suppressErrors = false): string
 {
     if (file_exists(PATH . '/vendor/' . VENDOR_PATH . '/templates/' . $template . '.tpf')) {
-        $content = file_get_contents(PATH . '/vendor/' . VENDOR_PATH . '/templates/' . $template . '.tpf');
+        return PATH . '/vendor/' . VENDOR_PATH . '/templates/' . $template . '.tpf';
     } else if (!$suppressErrors || file_exists(PATH . '/templates/' . $template . '.tpf')) {
-        $content = file_get_contents(PATH . '/templates/' . $template . '.tpf');
+        return PATH . '/templates/' . $template . '.tpf';
     } else {
         return '';
     }
+}
+
+function doRender($template, $args = [], $suppressErrors = false): string
+{
+    $path = getTemplatePath($template);
+    if ($suppressErrors && empty($path)) return '';
+
+    $content = file_get_contents($path);
 
     return compile($content, $args, $suppressErrors);
 }
