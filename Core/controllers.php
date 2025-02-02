@@ -287,6 +287,11 @@ function getCategoriesByType(Request $request): Response
     return new JsonResponse($result, 200);
 }
 
+function getUsersRoles(Request $request): Response
+{
+    return new JsonResponse(UsersService::getRoles(), 200);
+}
+
 function saveEntity(Request $request): Response
 {
     if (!$request->get('type')) {

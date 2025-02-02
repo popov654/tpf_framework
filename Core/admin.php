@@ -1872,7 +1872,7 @@
 						if (type == 'int') {
 							type = 'number';
 						}
-						let input = document.createElement(field == 'categories' ? 'select' : (type == 'text' ? 'textarea' : 'input'))
+						let input = document.createElement(field == 'categories' || contentType == 'user' && field == 'role' ? 'select' : (type == 'text' ? 'textarea' : 'input'))
 						if (type == 'number') {
 							input.type = type;
 						}
@@ -1927,6 +1927,12 @@
 						}
 						if (contentType == 'user' && field.match(/(Registered|Last Login) At/)) {
 							input.readOnly = true;
+						}
+						if (contentType == 'user' && field == 'Role') {
+							for (let role in users_roles) {
+								let option = new Option(users_roles[role], role)
+								input.appendChild(option)
+							}
 						}
 						if (field == 'id') {
 							var panel = document.createElement('div')
@@ -2460,6 +2466,7 @@
 		<script>
 			<?php $user = $TPF_REQUEST['session']->user ?? new User(); ?>let user = { username: '<?php echo $user->username; ?>', firstname: '<?php echo $user->firstname; ?>', lastname: '<?php echo $user->lastname; ?>', image: '<?php echo $user->photo; ?>' }
 			let logout_url = '<?php echo $TPF_CONFIG['logout_url'] ?? '/logout' ?>'; let session_hash = '<?php echo substr($TPF_REQUEST['session']->secureSessionId, -8); ?>';
+			let users_roles = <?php echo json_encode(Tpf\Service\UsersService::getRoles()); ?>;
 		</script>
 	</head>
 	<body>
