@@ -2,6 +2,7 @@
 
 namespace Tpf\Model;
 
+use ReflectionClass;
 use Tpf\Database\Repository;
 use Tpf\Database\Query;
 use Tpf\Database\ValidationException;
@@ -159,6 +160,21 @@ abstract class AbstractEntity
                 return strtoupper($matches[0][1]);
             }, $col['Field']);
             $result[$field] = $type;
+        }
+
+        return $result;
+    }
+
+    public static function getAssociations(): array
+    {
+        $result = [];
+        $refl = new ReflectionClass(get_called_class());
+        $props = $refl->getProperties();
+        foreach ($props as $prop) {
+            if (substr($prop->getName(), -2) == 'Id' && $refl->hasProperty(substr($prop->getName(), 0, -2))) {
+                $assocType = $refl->getProperty(substr($prop->getName(), 0, -2))->getType()->getName();
+                $result[] = ['field' => $prop->getName(), 'target_type' => $assocType];
+            }
         }
 
         return $result;

@@ -123,7 +123,13 @@ function getEntitySchema(Request $request): Response
 
     $schema = $className::getSchema($type);
 
-    return new JsonResponse($schema, 200);
+    $assoc = $className::getAssociations();
+    foreach ($assoc as &$data) {
+        $data['target'] = Repository::getTableNameByClass($data['target_type']);
+        unset($data['target_type']);
+    }
+
+    return new JsonResponse(['schema' => $schema, 'associations' => $assoc], 200);
 }
 
 function getEntities(Request $request): Response

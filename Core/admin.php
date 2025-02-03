@@ -1871,11 +1871,9 @@
 					let container = document.querySelector('#page-content .main .form');
 					container.innerHTML = '';
 					console.log(res);
-					cache.schemas[type] = res;
-					sessionStorage.cache = JSON.stringify(cache);
-					for (let field in res) {
+					for (let field in res.schema) {
 						if (field == 'isDeleted') continue;
-						let type = res[field];
+						let type = res.schema[field];
 						if (type == 'int') {
 							type = 'number';
 						}
