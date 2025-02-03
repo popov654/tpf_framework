@@ -503,14 +503,16 @@ XScroll.isYScrollActive = function(el) {
 
 XScroll.timer = null
 
-XScroll.initAll = function(force) {
+XScroll.initAll = function() {
    var els = getElementsByClass('scrollable', null, null)
    for (var i = 0; i < els.length; i++) {
-      this.init(els[i], force)
+      this.init(els[i])
    }
 }
 
-XScroll.init = function(el, force) {
+XScroll.init = function(el) {
+   if (el.configured) return
+   
    var tag = el.tagName.toLowerCase()
    if (tag != 'textarea') tag = 'div'
    var c = document.createElement(tag)
@@ -553,7 +555,6 @@ XScroll.init = function(el, force) {
    el.parentNode.style.display = ''
 
    if (el.getAttribute('viewport-height')) {
-      if (parseInt(el.style.height) < el.getAttribute('viewport-height') && tag != 'textarea' && !force) return
       el.style.height = parseInt(el.getAttribute('viewport-height')) + 'px'
    } else if (!_height.match(/%$/) && !_height.match(/^calc\(/)) {
       var h = parseInt(st.height) > 0 ? parseFloat(st.height) : parseFloat(st.maxHeight)
@@ -574,7 +575,6 @@ XScroll.init = function(el, force) {
    }
    
    if (el.getAttribute('viewport-width')) {
-      if (parseInt(el.style.width) < el.getAttribute('viewport-width') && tag != 'textarea' && !force) return
       if (parseInt(el.style.width) > el.getAttribute('viewport-width') && el.className.indexOf('scroll_x') == -1) el.className += ' scroll_x'
       el.style.width = parseInt(el.getAttribute('viewport-width')) + 'px'
       c.style.width = 'auto'
@@ -863,7 +863,7 @@ XScroll.init = function(el, force) {
    
    var f_update_content = debounce(function(data) {
       var target = data ? data[0].target : this
-      XScroll.updateThumbPosition(target.parentNode)
+      XScroll.updateThumbPosition(target.closest('.scrollable'))
    }, 250);
    var update_enabled = true
    
