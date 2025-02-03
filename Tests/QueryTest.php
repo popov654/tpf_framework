@@ -22,6 +22,33 @@ class QueryTest extends BasicTest
         parent::__construct($name);
     }
 
+    public function testBasicAndOrConditions()
+    {
+        global $dbal;
+        dbConnect();
+
+        $query = new Query(User::class);
+        $query->whereEq(['role' => USER::ROLE_ADMIN])->or()->whereEq(['username' => 'admin']);
+
+        $refl = new \ReflectionClass(Query::class);
+        $where1 = $refl->getProperty('where')->getValue($query);
+        self::assertEquals("(`role` = " . USER::ROLE_ADMIN . ") OR (`username` = 'admin')", $where1);
+
+        $query->whereEq(['role' => USER::ROLE_ADMIN])->orWhereEq(['username' => 'admin']);
+        $where2 = $refl->getProperty('where')->getValue($query);
+        self::assertEquals("(`role` = " . USER::ROLE_ADMIN . ") OR (`username` = 'admin')", $where2);
+
+        self::assertEquals($where1, $where2);
+
+        $query->whereEq(['role' => USER::ROLE_ADMIN, 'id' => 1, 'username' => 'admin'], true);
+        $where3 = $refl->getProperty('where')->getValue($query);
+        self::assertEquals("`role` = " . USER::ROLE_ADMIN . " OR `id` = 1 OR `username` = 'admin'", $where3);
+
+        $query->whereEq(['role' => USER::ROLE_ADMIN])->or()->whereEq(['id' => 1, 'username' => 'admin']);
+        $where4 = $refl->getProperty('where')->getValue($query);
+        self::assertEquals("(`role` = " . USER::ROLE_ADMIN . ") OR (`id` = 1 AND `username` = 'admin')", $where4);
+    }
+
     public function testSelectUpdateDelete()
     {
         global $dbal;
