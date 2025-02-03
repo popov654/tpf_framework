@@ -937,6 +937,7 @@
 				
 				let container = document.querySelector('#page-content .items-list');
 				container.addEventListener('click', function(event) {
+					if (!this.querySelectorAll('.line').length) return
 					let target = event.target;
 					while (target.classList && !target.classList.contains('line') && target.parentNode) {
 						target = target.parentNode;
