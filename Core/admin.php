@@ -279,7 +279,7 @@
 				background-position: center;
 				background-size: 20px;
 			}
-			.search_wrap {
+			.toolbar .search_wrap {
 				position: relative;
 				border-radius: 4px;
 				box-sizing: border-box;
@@ -290,7 +290,7 @@
 				max-width: 154px;
 				overflow: hidden;
 			}
-			.search_wrap.active {
+			.toolbar .search_wrap.active {
 				width: auto;
 				height: auto;
 				top: 0;
@@ -299,14 +299,14 @@
 				overflow: visible;
 				/* border-radius: 4px 4px 0 0; */
 			}
-			.search_wrap > .btn {
+			.toolbar .search_wrap > .btn {
 				margin: 0;
 			}
-			.search_wrap.active > * > .btn:last-child {
+			.toolbar .search_wrap.active > * > .btn:last-child {
 				position: relative;
 				right: 8px;
 			}
-			.search_wrap input {
+			.toolbar .search_wrap input {
 				width: 103px;
 				height: 19px;
 				padding: 0;
@@ -348,6 +348,9 @@
 				top: 30px;
 				font-size: 14px;
 			}
+			.form .search_wrap.active .dropdown {
+				width: 100%;
+			}
 			.search_wrap.active .dropdown .options {
 				font-size: 13px;
 				padding: 3px 6px 4px;
@@ -377,7 +380,8 @@
 				max-height: 136px;
 				height: auto;
 			}
-			.search_wrap.active .dropdown .line {
+			.search_wrap.active .dropdown .line,
+			.search_wrap .result.line {
 				font-size: 13px;
 				color: #363636;
 			}
@@ -385,25 +389,32 @@
 			.search_wrap.active .dropdown .line.selected {
 				background: #d3e8e6;
 			}
-			.search_wrap.active .dropdown .line > :nth-child(1) {
+			.search_wrap .line > :nth-child(1) {
 				display: none;
 			}
-			.search_wrap.active .dropdown .line > :nth-child(2) {
+			.search_wrap .line > :nth-child(2) {
 				margin-left: 6px;
 				min-width: 12px;
 			}
-			.search_wrap.active .dropdown .line > :nth-child(3) {
+			.search_wrap .line > :nth-child(3) {
 				margin-right: 4px;
 			}
-			.search_wrap.active .dropdown .line > :nth-child(4) {
+			.search_wrap .line > :nth-child(4) {
 				width: auto;
 			}
-			.search_wrap.active .dropdown .line > :nth-child(4) ~ * {
+			.search_wrap .line > :nth-child(4) ~ * {
 				display: none;
 			}
-			.search_wrap.active .dropdown .line > :nth-child(4) {
+			.search_wrap .line > :nth-child(4) {
 				width: 60px;
 				flex-grow: 1;
+			}
+			.form .search_wrap.item_selector {
+				padding: 0;
+				height: 32px;
+			}
+			.form .search_wrap.item_selector .result {
+				padding: 0 4px;
 			}
 			
 			.toolbar.users .search_wrap {
@@ -461,7 +472,7 @@
 			#page-content > .aside .items-list {
 				height: calc(100% - 36px);
 			}
-			.list .line {
+			.list .line, .item_selector .result {
 				display: flex;
 				gap: 6px;
 				padding: 2px 4px;
@@ -480,7 +491,7 @@
 			.list .line:not(.selected):hover {
 				background: #d3e8e6;
 			}
-			.list .line > * {
+			.list .line > *, .item_selector .result > * {
 				overflow: hidden;
 				text-overflow: ellipsis;
 				white-space: nowrap;
@@ -901,6 +912,36 @@
 			}
 			#newCategoryDialog .buttons > * {
 				width: 80px;
+			}
+			
+			.item_selector {
+				position: relative;
+			}
+			.item_selector > .header {
+				height: 24px;
+			}
+			.item_selector > .header > .search {
+				display: none;
+				padding: 3px 4px 3px 25px;
+				background: url('/tpf/icons/search.svg') 0 65% / 23px no-repeat;
+			}
+			.item_selector.active > .header > .result {
+				display: none;
+			}
+			.item_selector.active > .header > .search {
+				display: block;
+			}
+			.item_selector > .dropdown {
+				display: none;
+				position: absolute;
+				top: 24px;
+				background: #fff;
+				border: 1px solid #dadada;
+				border-radius: 4px;
+			}
+			.item_selector.active > .dropdown,
+			.item_selector.active > .dropdown.list {
+				display: block;
 			}
 			
 			.xscroll_thumb_horz, .xscroll_thumb_vert {
@@ -1478,7 +1519,7 @@
 					}
 				});
 				
-				document.getElementById('subheader-content').addEventListener('click', function(event) {
+				document.getElementById('subheader-content').addEventListener('click', async function(event) {
 					if (!event.target.classList.contains('link')) return
 					Array.from(event.target.parentNode.children).forEach(link => {
 						link.classList.toggle('active', link == event.target)
@@ -1574,6 +1615,8 @@
 				await loadCategories(window.contentType);
 				
 				initCategoriesEditor()
+				
+				initItemSelectors()
 				
 				if (localStorage.category !== undefined) {
 					let catlist = document.querySelector('.category-filter');
@@ -1723,6 +1766,30 @@
 				});
 			}
 			
+			function initItemSelectors() {
+				document.querySelectorAll('.form').forEach(form => {
+					form.addEventListener('click', function(event) {
+						if (!(event.target.classList.contains('header') && event.target.closest('.item_selector')) &&
+						    !event.target.closest('.item_selector > .header')) return
+						event.target.closest('.item_selector').classList.add('active')
+						let input = event.target.closest('.item_selector').querySelector('.header .search input')
+						input.focus()
+						suggestItemsByName(input, input.closest('.item_selector').dataset.type)
+					});
+					form.addEventListener('input', debounce(function(event) {
+						if (!event.target.classList.contains('search-input-field')) return;
+						if (event.target.value.length > 1 && event.target.value.slice(0, 1) == '#') {
+							toggleSearchOptions(false)
+							suggestItemIds(event.target)
+							return
+						}
+						
+						suggestItemsByName(event.target, event.target.closest('.item_selector').dataset.type)
+						
+					}, 500));
+				});
+			}
+			
 			
 			var TaskManager = {
 				addedPhotos: [],
@@ -1869,7 +1936,6 @@
 				return getSchema(type).then(res => {
 					let container = document.querySelector('#page-content .main .form');
 					container.innerHTML = '';
-					console.log(res);
 					for (let field in res.schema) {
 						if (field == 'isDeleted') continue;
 						let type = res.schema[field];
@@ -1925,9 +1991,11 @@
 						if (field.match(/\w+ Id$/)) {
 							label.textContent = label.textContent.replace(/ Id$/, '');
 							input.style.display = 'none';
-							let viewbox = document.createElement('div');
-							viewbox.className = 'form-control no-edit';
-							input.parentNode.appendChild(viewbox);
+							let assoc = res.associations.find(el => el.field == fieldName);
+							if (assoc) {
+								input.dataset.type = assoc.target;
+								createItemSelector(input);
+							}
 						}
 						if (contentType == 'user' && field.match(/(Registered|Last Login) At/)) {
 							input.readOnly = true;
@@ -1968,8 +2036,46 @@
 					initPhotoPickers();
 					initTagsWidgets();
 					
+					container.querySelectorAll('.item_selector .search-input-field').forEach(input => {
+						input.addEventListener('blur', function(event) {
+							if (!event.target.classList.contains('search-input-field')) return;
+							setTimeout(function() {
+								let selector = event.target.closest('.item_selector')
+								selector.classList.remove('active')
+								event.target.value = ''
+							}, 100)
+						});
+						input.closest('.item_selector').querySelector('.list').addEventListener('click', function(event) {
+							let line = event.target.closest('.item_selector .line')
+							if (!line) return
+							let wrapper = event.target.closest('.item_selector')
+							let result = wrapper.querySelector('.header .result')
+							result.innerHTML = line.innerHTML
+							document.querySelector('.form [name="' + wrapper.dataset.name + '"]').value = line.children[1].textContent
+						});
+					});
+					
 					formReady = true;
 				});
+			}
+			
+			function createItemSelector(input) {
+				if (input.name == 'authorId') {
+					let viewbox = document.createElement('div');
+					viewbox.className = 'form-control no-edit';
+					input.parentNode.appendChild(viewbox);
+					return;
+				}
+				let wrapper = document.createElement('div');
+				wrapper.className = 'form-control search_wrap item_selector';
+				wrapper.dataset.type = input.dataset.type;
+				wrapper.dataset.name = input.name;
+				input.parentNode.appendChild(wrapper);
+				
+				wrapper.innerHTML = '<div class="header"><div class="result line"><div></div><div></div><div></div></div><div class="search"><input type="text" class="search-input-field" data-action="search"></div></div>';
+				wrapper.innerHTML += '<div class="dropdown list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="200"></div>';
+				
+				XScroll.init(wrapper.lastElementChild);
 			}
 			
 			async function loadCategories(type) {
@@ -2256,6 +2362,9 @@
 						} catch(e) {}
 					}
 				})
+				
+				XScroll.updateThumbPosition(document.querySelector('.main'))
+				
 				removeLinesSelection()
 				window.currentItemId = null
 			}
