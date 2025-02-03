@@ -37,73 +37,104 @@ class Query
         return $this;
     }
 
-    public function where(array $args)
+    public function where(array|string $args, bool $or = false)
     {
         $this->where = "";
+
+        if (gettype($args) == 'string') $args = [$args];
 
         if ($args !== [] && array_keys($args) !== range(0, count($args) - 1)) {
-            return $this->andWhereEq($args);
+            return $this->whereEq($args, $or);
         }
 
-        return $this->andWhere($args);
-    }
+        if (gettype($args) == 'string') $args = [$args];
 
-    public function andWhere(array $args)
-    {
         if (empty($args)) {
             return $this;
         }
+        if (count($args) == 1 && empty($this->where)) {
+            $this->where = $args[0];
+            return $this;
+        }
+        if (!empty($this->where) && !preg_match('/^\\(.*\\)$/', $this->where)) {
+            $this->where = '(' . $this->where . ')';
+        }
         foreach ($args as $str) {
-            $this->where .= (!empty($this->where) ? " AND " : "") . "(" . $str . ")";
+            $this->where .= (!empty($this->where) ? ($or ? " OR " : " AND ") : "") . "(" . $str . ")";
         }
 
         return $this;
     }
 
-    public function orWhere(array $args)
+    public function and()
     {
-        if (empty($args)) {
-            return $this;
+        if (!empty($this->where)) {
+            $this->where = preg_replace("/\\s+(AND|OR)\\s+$/", "", $this->where);
         }
-        if (empty($this->where)) {
-            return $this->where($args);
-        }
-        $this->where = "(" . $this->where . ") OR ";
-        foreach ($args as $str) {
-            $this->where .= "(" . $str . ")";
-        }
+        $this->where = !empty($this->where) ? '(' . $this->where . ')' . " AND " : '';
 
         return $this;
     }
 
-    public function whereEq(array $args)
+    public function or()
     {
-        $this->where = "";
+        if (!empty($this->where)) {
+            $this->where = preg_replace("/\\s+(AND|OR)\\s+$/", "", $this->where);
+        }
+        $this->where = !empty($this->where) ? '(' . $this->where . ')' . " OR " : '';
 
-        return $this->andWhereEq($args);
+        return $this;
     }
 
-    public function andWhereEq(array $args)
+    public function andWhere(array|string $args, bool $or = false)
     {
+        return $this->and()->where($args, $or);
+    }
+
+    public function orWhere(array|string $args, bool $or = false)
+    {
+        return $this->or()->where($args, $or);
+    }
+
+    public function andWhereEq(array $args, bool $or = false)
+    {
+        return $this->and()->whereEq($args, $or);
+    }
+
+    public function orWhereEq(array $args, bool $or = false)
+    {
+        return $this->or()->whereEq($args, $or);
+    }
+
+    public function whereEq(array $args, bool $or = false)
+    {
+        if (!is_null($this->where) && !preg_match("/\\s+(AND|OR)\\s+$/", $this->where)) {
+            $this->where = "";
+        }
+
         $cond = "";
         foreach ($args as $name => $value) {
             if (is_array($value)) {
                 $value = $this->processChildWhere(null, $name, $value);
                 if ($value) {
                     if (!empty($cond)) {
-                        $cond .= " AND ";
+                        $cond .= $or ? " OR " : " AND ";
                     }
                     $cond .= $value;
                 }
                 continue;
             }
             if (!empty($cond)) {
-                $cond .= " AND ";
+                $cond .= $or ? " OR " : " AND ";
             }
             $cond .= "`$name` = ";
             $cond .= is_numeric($value) ? $value : "'" . self::mb_escape($value) . "'";
         }
-        $this->where .= (strlen($this->where) > 0 ? " AND " : "") . $cond;
+        if (!empty($this->where)) {
+            $this->where .= '(' . $cond . ')';
+        } else {
+            $this->where = $cond;
+        }
 
         return $this;
     }
