@@ -54,6 +54,9 @@ function initSearch() {
 			}
 		})
 		input.addEventListener('input', debounce(function(event) {
+			if (contentType == 'user' && event.target.value.slice(0, 1) == '@') {
+				event.target.value = event.target.value.slice(1)
+			}
 			if (event.target.value.length > 1) {
 				// Search by item ID
 				if (event.target.value.slice(0, 1) == '#') {
@@ -79,7 +82,9 @@ function initSearch() {
 			}
 		}, 500));
 		input.addEventListener('focus', function(event) {
-			document.querySelector('.search_wrap .dropdown').style.display = ''
+			if (contentType != 'user') {
+				document.querySelector('.search_wrap .dropdown').style.display = ''
+			}
 			if (event.target.value.slice(0, 1) == '#') {
 				toggleSearchOptions(false)
 				suggestItemIds(event.target)
