@@ -2,6 +2,7 @@
 
 namespace Tpf\Tests;
 
+use App\Model\Blog\Post;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -93,6 +94,21 @@ class ORMTest extends BasicTest
         self::assertArrayHasKey('password', $columns);
         self::assertArrayHasKey('email', $columns);
         self::assertEquals('is_active', $columns['isActive']['name']);
+    }
+
+    public function testGetAssociations()
+    {
+        require_once PATH . '/src/Model/Blog/Post.php';
+
+        $assoc = Session::getAssociations();
+        self::assertEquals(1, count($assoc));
+        self::assertEquals('userId', $assoc[0]['field']);
+        self::assertEquals('Tpf\\Model\\User', $assoc[0]['target_type']);
+
+        $assoc = Post::getAssociations();
+        self::assertEquals(1, count($assoc));
+        self::assertEquals('authorId', $assoc[0]['field']);
+        self::assertEquals('Tpf\\Model\\User', $assoc[0]['target_type']);
     }
 
     public function testGetRealmEntityNames()
