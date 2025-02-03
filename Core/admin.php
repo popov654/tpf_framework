@@ -390,9 +390,7 @@
 			}
 			.search_wrap.active .dropdown .line > :nth-child(2) {
 				margin-left: 6px;
-			}
-			.search_wrap.active .dropdown .line > :nth-child(2) {
-				 min-width: 12px;
+				min-width: 12px;
 			}
 			.search_wrap.active .dropdown .line > :nth-child(3) {
 				margin-right: 4px;
@@ -401,9 +399,9 @@
 				width: auto;
 			}
 			.search_wrap.active .dropdown .line > :nth-child(4) ~ * {
-				visibility: hidden;
+				display: none;
 			}
-			.search_wrap.active .dropdown .line > :last-child {
+			.search_wrap.active .dropdown .line > :nth-child(4) {
 				width: 60px;
 				flex-grow: 1;
 			}
