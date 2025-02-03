@@ -59,7 +59,7 @@ class ORMTest extends BasicTest
             'firstname' => 'Test',
             'lastname' => '',
             'isActive' => true,
-            'registeredAt' => new \Datetime()
+            'registeredAt' => (new \Datetime())->format('Y-m-d H:i:s')
         ];
 
         /** @var User $user */
@@ -88,7 +88,7 @@ class ORMTest extends BasicTest
     {
         $className = 'Tpf\\Model\\User';
         $columns = Repository::getColumnsByClass($className);
-        self::assertEquals(11, count($columns));
+        self::assertEquals(12, count($columns));
         self::assertArrayHasKey('username', $columns);
         self::assertArrayHasKey('password', $columns);
         self::assertArrayHasKey('email', $columns);
@@ -110,18 +110,22 @@ class ORMTest extends BasicTest
         $diffs = getEntitySchemaDiff($className);
         $diff = $diffs[$className];
 
+        $existingColumns = getEntityTableColumns($className);
+        $pos = array_keys(array_filter($existingColumns, function ($field) {
+            return $field['Field'] == 'email';
+        }))[0];
+
         self::assertEquals(0, count($diff));
 
-        $diff[0] = ['position' => 6, 'deleteCount' => 0, 'add' => [['property' => 'bio', 'name' => 'bio', 'full' => '`bio` TEXT NOT NULL']]];
+        $diff[0] = ['position' => $pos+1, 'deleteCount' => 0, 'add' => [['property' => 'bio', 'name' => 'bio', 'full' => '`bio` TEXT NOT NULL']]];
 
         $tableName = Repository::getTableNameByClass($className);
-        $existingColumns = getEntityTableColumns($className);
         $statements = Repository::applyDiff($tableName, $existingColumns, $diff, true);
 
         self::assertEquals(1, count($statements));
         self::assertEquals('ALTER TABLE `user` ADD COLUMN `bio` TEXT NOT NULL AFTER `email`', trim($statements[0]));
 
-        $diff[0] = ['position' => 6, 'deleteCount' => 1, 'add' => []];
+        $diff[0] = ['position' => $pos+1, 'deleteCount' => 1, 'add' => []];
         $statements = Repository::applyDiff($tableName, $existingColumns, $diff, true);
 
         self::assertEquals(1, count($statements));

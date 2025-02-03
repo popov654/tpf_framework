@@ -57,7 +57,12 @@ abstract class AbstractEntity
             if (!isset($props[$key])) {
                 continue;
             }
-            if ($props[$key] == 'string') {
+            if (strtolower($props[$key]) == 'datetime' && gettype($props[$key]) == 'string') {
+                $value = str_replace('T', ' ', $value);
+                $entity->$key = \DateTime::createFromFormat("Y-m-d H:i:s", $value);
+            } else if (strtolower($props[$key]) == 'date') {
+                $entity->$key = \DateTime::createFromFormat("Y-m-d", $value);
+            } else if ($props[$key] == 'string') {
                 $entity->$key = (string) $value;
             } else if ($props[$key] == 'int') {
                 $entity->$key = (int) $value;
@@ -66,7 +71,9 @@ abstract class AbstractEntity
             } else if ($props[$key] == 'bool') {
                 $entity->$key = (bool) $value;
             } else {
-                $entity->$key = $value;
+                try {
+                    $entity->$key = $value;
+                } catch (\Throwable $e) {}
             }
             if (get_class($entity) == User::class && $key == 'password') {
                 PasswordHasher::hashPassword($entity);
