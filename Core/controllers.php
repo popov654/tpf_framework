@@ -551,6 +551,17 @@ function restoreCategories(Request $request): Response
 
 function search(Request $request, Repository $repository)
 {
+    if ($request->get('type') == 'user' && !preg_match("/^[@#]/", $request->get('search'))) {
+        $pattern = Repository::mb_escape($request->get('search')) . '%';
+        $repository->where([
+            "`username` LIKE '"   . $pattern . "'",
+            "`firstname` LIKE '"  . $pattern . "'",
+            "`firstname` LIKE '"  . $pattern . "'",
+            "CONCAT(`firstname`, ' ', `lastname`) LIKE '" . $pattern . "'",
+            "CONCAT(`lastname`, ' ', `firstname`) LIKE '" . $pattern . "'"
+        ], true);
+        return;
+    }
     if (!preg_match("/^[@#]/", $request->get('search'))) {
         $exactMatch = $request->get('match') == 'exact';
         $searchInText = $request->get('searchInText') !== null && preg_match("/^true|1|$/", $request->get('searchInText'));
@@ -560,7 +571,7 @@ function search(Request $request, Repository $repository)
         if ($exactMatch) {
             $repository->andWhereEq(['id' => substr($request->get('search'), 1)]);
         } else {
-            $repository->andWhere(["CONVERT(`id`, char) LIKE '" . substr($request->get('search'), 1) . "%'"]);
+            $repository->andWhere(["CONVERT(`id`, char) LIKE '" . Repository::mb_escape(substr($request->get('search'), 1)) . "%'"]);
         }
     } else if (preg_match("/^@[\w\d_~]+$/", $request->get('search'))) {
         $author = (new Repository(User::class))->findOneBy(['username' => substr($request->get('search'), 1)]);

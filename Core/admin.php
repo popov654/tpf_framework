@@ -237,7 +237,7 @@
 			.toolbar .btn:active {
 				outline: none;
 			}
-			.toolbar > .hidden {
+			.toolbar .hidden {
 				display: none;
 			}
 			.btn.new {
@@ -403,13 +403,22 @@
 			.search_wrap.active .dropdown .line > :nth-child(4) ~ * {
 				visibility: hidden;
 			}
-			.search_wrap.active .dropdown .line:not(.user) > :last-child {
+			.search_wrap.active .dropdown .line > :last-child {
 				width: 60px;
+				flex-grow: 1;
 			}
-			.search_wrap.active .dropdown .line.user > :last-child {
-				text-align: left;
-				margin-left: 8px;
-				width: 230px;
+			
+			.toolbar.users .search_wrap {
+				max-width: 190px;
+			}
+			.toolbar.users .search_wrap input {
+				width: 139px;
+			}
+			.toolbar.users .btn.move {
+				display: none;
+			}
+			.toolbar.users .btn_group.categories {
+				display: none;
 			}
 			
 			.btn.btn-comments {
@@ -919,16 +928,6 @@
 						event.preventDefault();
 						localStorage.currentPage = link.getAttribute('href');
 						// updatePage();
-					}
-				});
-				let sublinks = document.querySelectorAll('#subheader-content > .link')
-				sublinks.forEach(function(link) {
-					link.onclick = async function(event) {
-						event.preventDefault();
-						window.contentType = localStorage.contentType = link.getAttribute('data-value') || 'blog_post';
-						await buildForm(window.contentType);
-						await loadCategories(window.contentType);
-						await loadContent(window.contentType);
 					}
 				});
 				
@@ -1490,7 +1489,9 @@
 					}
 					contentType = document.querySelector('#subheader-content :nth-child(2) > .active').dataset.value
 					localStorage.contentType = contentType
-					reloadContent()
+					await buildForm(window.contentType)
+					await loadCategories(window.contentType)
+					await reloadContent()
 				});
 				
 				container.addEventListener('click', function(event) {
@@ -1594,6 +1595,7 @@
 					section = section.slice(1)
 				}
 				window.page = 1
+				window.currentItemId = 0
 				
 				document.getElementById('subheader-content').style.display = (section == 'content' ? '' : 'none')
 				
@@ -1602,6 +1604,7 @@
 					let type = link && link.dataset.value || 'blog_post'
 					window.contentType = type
 					await buildForm(window.contentType)
+					await loadCategories(window.contentType)
 					await reloadContent()
 				}
 				else if (section == 'users') {
@@ -1609,6 +1612,9 @@
 					await buildForm(window.contentType)
 					await reloadContent()
 				}
+				
+				document.querySelector('.toolbar').classList.toggle('users', section == 'users')
+				document.querySelector('.search_wrap .dropdown').style.display = (section == 'users' ? 'none' : '')
 				
 				document.querySelectorAll('#header nav > a').forEach(link => {
 					link.classList.toggle('active', link.dataset.href == '#' + section)
@@ -1717,6 +1723,7 @@
 					});
 				});
 			}
+			
 			
 			var TaskManager = {
 				addedPhotos: [],
@@ -1934,16 +1941,18 @@
 								input.appendChild(option)
 							}
 						}
-						if (field == 'id') {
+						if (field == 'Id') {
 							var panel = document.createElement('div')
 							panel.className = 'actions float-end'
 							panel.innerHTML = '<button class="btn btn-primary" data-action="duplicate">Duplicate</button><button class="btn btn-primary" data-action="delete">Delete</button>'
 							input.parentNode.appendChild(panel)
 							
-							var btn = document.createElement('div')
-							btn.className = 'btn btn-comments float-end'
-							btn.setAttribute('data-action', 'show-comments')
-							input.parentNode.appendChild(btn)
+							if (contentType != 'user') {
+								var btn = document.createElement('div')
+								btn.className = 'btn btn-comments float-end'
+								btn.setAttribute('data-action', 'show-comments')
+								input.parentNode.appendChild(btn)
+							}
 						}
 						
 						container.appendChild(row);
@@ -2097,13 +2106,18 @@
 									}
 								}
 							} else if (contentType == 'user' && input.name.match(/^(registered|lastLogin)At$/)) {
-								input.value = Intl ? new Intl.DateTimeFormat('en-GB', {
-									dateStyle: 'short',
-									timeStyle: 'long',
-									timeZone: 'GMT',
-								}).format(Date.parse(res[input.name])) : res[input.name].replace('T', ' ');
+								if (res[input.name]) {
+									input.value = Intl ? new Intl.DateTimeFormat('en-GB', {
+										dateStyle: 'short',
+										timeStyle: 'long',
+										timeZone: 'GMT',
+									}).format(Date.parse(res[input.name])) : res[input.name].replace('T', ' ');
+								} else {
+									input.value = 'Never'
+								}
 								input.disabled = true
 							} else if (contentType == 'user' && input.name == 'password') {
+								input.hiddenValue = res[input.name]
 								input.value = '**********'
 								input.classList.add('password-form-field')
 								input.rows = 1
@@ -2203,6 +2217,7 @@
 			function removeLinesSelection() {
 				document.querySelectorAll('.aside .list .line').forEach(function(line) {
 					line.classList.remove('selected');
+					line.querySelector('input[type="checkbox"]').checked = false
 				});
 			}
 			
@@ -2228,6 +2243,12 @@
 			
 			function duplicateItem() {
 				document.querySelectorAll('[name="id"], [name="authorId"], [name="createdAt"], [name="modifiedAt"]').forEach(disableField)
+
+				let passwordField = document.querySelector('.form-control[name="password"]')
+				if (passwordField) {
+					passwordField.disabled = false
+					passwordField.readOnly = true
+				}
 
 				/* Clear photos */
 				var photos_fields = document.querySelectorAll('[data-role="photopicker"]')
@@ -2312,7 +2333,7 @@
 				let message = 'Are you sure you want to delete ' + getPlural(ids.length, 'item') + '?'
 				actionConfirm(message, function() {
 					let category = document.querySelector('.category-filter')?.value
-					fetch('/deleteItem?' + (category != 'trash' ? 'soft&' : '') + 'type=' + window.contentType + '&ids=[' + ids.join(',') + ']')
+					fetch('/deleteItem?' + (category != 'trash' && contentType != 'user' ? 'soft&' : '') + 'type=' + window.contentType + '&ids=[' + ids.join(',') + ']')
 						.then(res => res.json())
 						.then(res => {
 							let line = document.querySelector('.aside .list .line.selected')
@@ -2533,7 +2554,7 @@
 								</div>
 							</div>
 						</div>
-						<div class="btn_group">
+						<div class="btn_group categories">
 							<select name="categories" class="category-filter form-control"><option value="[]">None</option></select>
 						</div>
 						<div class="btn_group pagination">
