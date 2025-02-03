@@ -1779,7 +1779,7 @@
 			async function loadContent(type = 'blog_post', offset = 0, count = pageSize, autoSelect = true) {
 				let catlist = document.querySelector('.category-filter')
 				let query = (catlist && catlist.value ? '&category=' + catlist.value : '') + '&excludeSubCats'
-				if (document.querySelector('.search-input-field').value.match(/^[^#][\w\d\s]+$/)) {
+				if (document.querySelector('.search-input-field').value.match(/^(@[\w\d]+|[^@#\s])/)) {
 					query = '&search=' + encodeURIComponent(document.querySelector('.search-input-field').value)
 					if (document.getElementById('search_in_text').checked) query += '&searchInText=1'
 					if (document.getElementById('exact_match').checked) query += '&match=exact'
