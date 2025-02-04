@@ -209,8 +209,13 @@ function getEntity(Request $request): Response
         }
 
         $fields = array_keys($className::getSchema($type));
-        if (in_array('authorId', $fields)) {
-            array_splice($fields, array_search('authorId', $fields) + 1, 0, 'author');
+        $index = 0;
+        foreach ($fields as $field) {
+            if (substr($field, -2) == 'Id' && property_exists($className, substr($field, 0, -2))) {
+                array_splice($fields, $index + 1, 0, substr($field, 0, -2));
+                $index++;
+            }
+            $index++;
         }
 
         return new JsonResponse($entity->getFields($fields), 200);
