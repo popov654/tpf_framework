@@ -84,7 +84,7 @@ abstract class AbstractEntity
             $fields = array_keys($fields);
         }
         foreach ($fields as $field) {
-            if (!in_array($this->$field, get_object_vars($this))) continue;
+            if (!array_key_exists($field, get_object_vars($this))) continue;
             $data[$field] = $this->$field;
             if ($data[$field] instanceof \DateTime) {
                 $data[$field] = $data[$field]->format('Y-m-d\TH:i:s');
