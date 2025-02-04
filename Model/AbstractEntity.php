@@ -172,8 +172,10 @@ abstract class AbstractEntity
         $props = $refl->getProperties();
         foreach ($props as $prop) {
             if (substr($prop->getName(), -2) == 'Id' && $refl->hasProperty(substr($prop->getName(), 0, -2))) {
-                $assocType = $refl->getProperty(substr($prop->getName(), 0, -2))->getType()->getName();
-                $result[] = ['field' => $prop->getName(), 'target_type' => $assocType];
+                $property = $refl->getProperty(substr($prop->getName(), 0, -2));
+                $assocType = $property->getType()->getName();
+                $allowsNull = $property->getType()->allowsNull();
+                $result[] = ['field' => $prop->getName(), 'target_type' => $assocType, 'allows_null' => $allowsNull];
             }
         }
 

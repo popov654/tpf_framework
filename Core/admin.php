@@ -347,6 +347,7 @@
 			}
 			.form .search_wrap .dropdown {
 				width: 100%;
+				top: 100%;
 			}
 			.search_wrap.active .dropdown {
 				display: block;
@@ -385,6 +386,10 @@
 				font-size: 13px;
 				color: #363636;
 			}
+			.item_selector .result.line,
+			.item_selector.active .dropdown .line {
+				font-size: 15px;
+			}
 			.search_wrap.active .dropdown .line:hover,
 			.search_wrap.active .dropdown .line.selected {
 				background: #d3e8e6;
@@ -411,10 +416,10 @@
 			}
 			.form .search_wrap.item_selector {
 				padding: 0;
-				height: 32px;
+				height: 34px;
 			}
 			.form .search_wrap.item_selector .result {
-				padding: 0 4px;
+				padding: 2px 4px;
 			}
 			
 			.toolbar.users .search_wrap {
@@ -1771,10 +1776,13 @@
 					form.addEventListener('click', function(event) {
 						if (!(event.target.classList.contains('header') && event.target.closest('.item_selector')) &&
 						    !event.target.closest('.item_selector > .header')) return
-						event.target.closest('.item_selector').classList.add('active')
-						let input = event.target.closest('.item_selector').querySelector('.header .search input')
+						if (event.target.closest('.item_selector').classList.contains('no-edit')) return
+						let selector = event.target.closest('.item_selector');
+						selector.classList.add('active')
+						selector.classList.remove('is-invalid')
+						let input = selector.querySelector('.header .search input')
 						input.focus()
-						suggestItemsByName(input, input.closest('.item_selector').dataset.type)
+						suggestItemsByName(input, selector.dataset.type)
 					});
 					form.addEventListener('input', debounce(function(event) {
 						if (!event.target.classList.contains('search-input-field')) return;
@@ -2047,6 +2055,7 @@
 							}, 200)
 						});
 						input.closest('.item_selector').querySelector('.list').addEventListener('click', function(event) {
+							if (event.target.closest('.item_selector').classList.contains('no-edit')) return
 							let line = event.target.closest('.item_selector .line')
 							if (!line) return
 							let wrapper = event.target.closest('.item_selector')
@@ -2073,6 +2082,8 @@
 				wrapper.dataset.type = input.dataset.type;
 				wrapper.dataset.name = input.name;
 				input.parentNode.appendChild(wrapper);
+				
+				input.selector = wrapper;
 				
 				wrapper.innerHTML = '<div class="header"><div class="result line"><div></div><div></div><div></div></div><div class="search"><input type="text" class="search-input-field" data-action="search"></div></div>';
 				wrapper.innerHTML += '<div class="dropdown list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="40%"></div>';
@@ -2243,28 +2254,27 @@
 									}
 								} catch(e) {}
 							}
-							if (input.name && input.name.match(/^authorId|createdAt|modifiedAt$/)) {
+							if (input.name && input.name.match(/^[a-zA-Z0-9_]+Id|createdAt|modifiedAt$/)) {
 								input.disabled = true
 								let match = null
+								let no_edit = ['userId', 'authorId']
 								if (input.name.match(/^createdAt|modifiedAt$/)) {
 									input.value = input.value.replace('T', ' ')
 								}
 								else if (match = input.name.match(/([a-zA-Z0-9_]+)Id$/)) {
 									let viewbox = input.nextElementSibling
-									if (res[match[1]] && viewbox) {
+									if (viewbox) {
 										input.style.display = 'none'
-										viewbox.innerHTML = '<div>' + res[match[1]].id + '</div><div>' + generateThumbHtml(res[match[1]]) + '</div><div>' + (!match[1].match(/^user|author$/) ? res[match[1]].name : res[match[1]].username) + '</div>'
-										if (match[1].match(/^user|author$/)) {
-											let fullName = [res[match[1]].firstname, res[match[1]].lastname].join(' ').trim()
-											let cell = document.createElement('div')
-											cell.textContent = fullName
-											viewbox.insertBefore(cell, viewbox.lastElementChild)
-											viewbox.lastElementChild.textContent = '( @' + viewbox.lastElementChild.textContent + ' )'
+										let data = res[match[1]] || { id: ' ', name: 'empty', photo: null }
+										let target = viewbox.classList.contains('item_selector') ? viewbox.querySelector('.result') : viewbox
+										displayValueInViewbox(target, data, match[1])
+										if (viewbox.classList.contains('item_selector')) {
+											target.innerHTML += '<div></div>'
 										}
-									} else if (viewbox) {
+									} else {
 										input.style.display = ''
-										viewbox.style.display = 'none'
 									}
+									input.disabled = (no_edit.indexOf(input.name) != -1)
 								}
 							}
 						}
@@ -2274,9 +2284,20 @@
 						TaskManager.removedPhotos = []
 						TaskManager.formChanged = false
 					});
+					
+				function displayValueInViewbox(viewbox, data, field) {
+					viewbox.innerHTML = '<div>' + data.id + '</div><div>' + generateThumbHtml(data) + '</div><div>' + (!field.match(/^user|author$/) ? data.name : data.username) + '</div>'
+					if (field.match(/^user|author$/)) {
+						let fullName = [data.firstname, data.lastname].join(' ').trim()
+						let cell = document.createElement('div')
+						cell.textContent = fullName
+						viewbox.insertBefore(cell, viewbox.lastElementChild)
+						viewbox.lastElementChild.textContent = '( @' + viewbox.lastElementChild.textContent + ' )'
+					}
+				}
 			}
 			
-			function updateItemData() {
+			async function updateItemData() {
 				let inputs = document.querySelectorAll('#page-content .main .form .form-control');
 				let data = {}
 				for (let input of inputs) {
@@ -2291,6 +2312,26 @@
 					}
 					if (input.dataset.role == 'array') {
 						value = value.length ? JSON.parse(input.value) : []
+					}
+					if (input.name.match(/([a-zA-Z0-9_]+)Id$/)) {
+						var schema = await getSchema(window.contentType)
+						let assoc = schema.associations.find(el => el.field == input.name)
+						if (assoc && (input.value == 0 || input.value == '')) {
+							if (assoc.allows_null) {
+								input.value = 0
+								if (input.selector) {
+									input.selector.classList.remove('is-invalid')
+								}
+							} else {
+								if (input.selector) {
+									input.selector.classList.add('is-invalid')
+								}
+								setTimeout(() => alert('There are errors in your form. Please set all the mandatory links before submitting'), 100)
+								return
+							}
+						} else if (input.selector) {
+							input.selector.classList.remove('is-invalid')
+						}
 					}
 					data[input.name] = value
 				}
