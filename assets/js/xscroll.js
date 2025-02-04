@@ -267,6 +267,7 @@ XScroll.updateThumbSize = function(obj, axis) {
       button_size = parseInt(obj.getAttribute('button-size'))
    }
    var thumb_size = 80
+   var percent = false
    if (XScroll.hasXScroll(obj) && obj.clientWidth == 0 || XScroll.hasYScroll(obj) && obj.clientHeight == 0) return
    if (!obj.getAttribute('thumb-length')) {
       if (axis == 'x') {
@@ -279,15 +280,24 @@ XScroll.updateThumbSize = function(obj, axis) {
                                Math.min(1, (obj.clientHeight / (obj.children[0].clientHeight - height)))), thumb_size)
       }
    } else {
-      thumb_size = parseInt(obj.getAttribute('thumb-length'))
+      if (!obj.getAttribute('thumb-length').match(/\d+%$/)) {
+         thumb_size = Math.min(obj.clientHeight - button_size * 2, Math.max(0, parseInt(obj.getAttribute('thumb-length'))))
+      } else {
+         var thumb_size = parseFloat(obj.getAttribute('thumb-length').slice(0, -1))
+         if (isNaN(thumb_size) || thumb_size < 0 || thumb_size > 100) {
+            obj.removeAttribute('thumb-length')
+            thumb_size = '60'
+         }
+         percent = true
+      }
    }
    var thumb = axis == 'x' ? getElementsByClass('xscroll_thumb_horz', obj, 'div')[0] : 
                              getElementsByClass('xscroll_thumb_vert', obj, 'div')[0]
    if (!thumb) return
    if (axis == 'x') {
-      thumb.style.width = thumb_size + 'px'
+      thumb.style.width = thumb_size + (!percent ? 'px' : '%')
    } else {
-      thumb.style.height = thumb_size + 'px'
+      thumb.style.height = thumb_size + (!percent ? 'px' : '%')
    }
 }
 
