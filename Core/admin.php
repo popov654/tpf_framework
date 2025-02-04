@@ -271,7 +271,7 @@
 			.btn.search {
 				background-image: url('/tpf/icons/search.svg');
 			}
-			.btn.clear-text {
+			.btn.clear-text, .item_selector .btn.clear {
 				width: 20px;
 				height: 20px;
 				padding: 1px;
@@ -414,12 +414,25 @@
 				width: 60px;
 				flex-grow: 1;
 			}
+			.form .item_selector .result > :nth-child(1) {
+				min-width: 8px;
+			}
+			.form .item_selector .result > :last-child {
+				text-align: right;
+				flex-grow: 1;
+			}
 			.form .search_wrap.item_selector {
 				padding: 0;
 				height: 34px;
 			}
 			.form .search_wrap.item_selector .result {
 				padding: 2px 4px;
+			}
+			.form .item_selector.empty .result > :nth-child(4) {
+				opacity: 0.35;
+			}
+			.form .item_selector.empty .result > :nth-child(4) > * {
+				cursor: default;
 			}
 			
 			.toolbar.users .search_wrap {
@@ -1777,6 +1790,12 @@
 						if (!(event.target.classList.contains('header') && event.target.closest('.item_selector')) &&
 						    !event.target.closest('.item_selector > .header')) return
 						if (event.target.closest('.item_selector').classList.contains('no-edit')) return
+						
+						if (event.target.classList.contains('clear')) {
+							clearItemSelector(event.target.closest('.item_selector'))
+							return
+						}
+						
 						let selector = event.target.closest('.item_selector');
 						selector.classList.add('active')
 						selector.classList.remove('is-invalid')
@@ -2060,7 +2079,12 @@
 							if (!line) return
 							let wrapper = event.target.closest('.item_selector')
 							let result = wrapper.querySelector('.header .result')
-							result.innerHTML = line.innerHTML
+							
+							for (let i = 0; i < 3; i++) {
+								result.children[i].innerHTML = line.children[i+1].innerHTML
+							}
+							
+							wrapper.classList.remove('empty')
 							document.querySelector('.form [name="' + wrapper.dataset.name + '"]').value = line.children[1].textContent
 						});
 						addKeyboardNavigation(input);
@@ -2085,7 +2109,7 @@
 				
 				input.selector = wrapper;
 				
-				wrapper.innerHTML = '<div class="header"><div class="result line"><div></div><div></div><div></div></div><div class="search"><input type="text" class="search-input-field" data-action="search"></div></div>';
+				wrapper.innerHTML = '<div class="header"><div class="result"><div></div><div></div><div></div></div><div class="search"><input type="text" class="search-input-field" data-action="search"></div></div>';
 				wrapper.innerHTML += '<div class="dropdown list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="40%"></div>';
 				
 				setTimeout(function() {
@@ -2265,11 +2289,14 @@
 									let viewbox = input.nextElementSibling
 									if (viewbox) {
 										input.style.display = 'none'
-										let data = res[match[1]] || { id: ' ', name: 'empty', photo: null }
+										let data = res[match[1]] || { id: '', name: 'empty', photo: null }
 										let target = viewbox.classList.contains('item_selector') ? viewbox.querySelector('.result') : viewbox
 										displayValueInViewbox(target, data, match[1])
 										if (viewbox.classList.contains('item_selector')) {
-											target.innerHTML += '<div></div>'
+											let schema = cache.schemas[contentType]
+											let assoc = schema.associations.find(el => el.field == input.name)
+											let btn = assoc && assoc.allows_null ? '<div class="btn clear float-end"></div>' : ''
+											target.innerHTML += '<div>' + btn + '</div>'
 										}
 									} else {
 										input.style.display = ''
@@ -2284,17 +2311,26 @@
 						TaskManager.removedPhotos = []
 						TaskManager.formChanged = false
 					});
-					
-				function displayValueInViewbox(viewbox, data, field) {
-					viewbox.innerHTML = '<div>' + data.id + '</div><div>' + generateThumbHtml(data) + '</div><div>' + (!field.match(/^user|author$/) ? data.name : data.username) + '</div>'
-					if (field.match(/^user|author$/)) {
-						let fullName = [data.firstname, data.lastname].join(' ').trim()
-						let cell = document.createElement('div')
-						cell.textContent = fullName
-						viewbox.insertBefore(cell, viewbox.lastElementChild)
-						viewbox.lastElementChild.textContent = '( @' + viewbox.lastElementChild.textContent + ' )'
-					}
+			}
+			
+			function displayValueInViewbox(viewbox, data, field) {
+				viewbox.innerHTML = '<div>' + data.id + '</div><div>' + generateThumbHtml(data) + '</div><div>' + (!field.match(/^user|author$/) ? data.name : data.username) + '</div>'
+				if (field.match(/^user|author$/)) {
+					let fullName = [data.firstname, data.lastname].join(' ').trim()
+					let cell = document.createElement('div')
+					cell.textContent = fullName
+					viewbox.insertBefore(cell, viewbox.lastElementChild)
+					viewbox.lastElementChild.textContent = '( @' + viewbox.lastElementChild.textContent + ' )'
 				}
+			}
+			
+			function clearItemSelector(selector) {
+				let viewbox = selector.querySelector('.result')
+				let data = { id: '', name: 'empty', photo: null }
+				viewbox.children[0].innerHTML = ''
+				viewbox.children[1].innerHTML = generateThumbHtml(data)
+				viewbox.children[2].innerHTML = 'empty'
+				selector.classList.add('empty')
 			}
 			
 			async function updateItemData() {
@@ -2379,6 +2415,10 @@
 				}
 				duplicateItem()
 				document.querySelectorAll('.main .form .form-control').forEach(el => {
+					if (el.type == 'number') el.value = '0'
+					if (el.classList.contains('item_selector')) {
+						clearItemSelector(el)
+					}
 					if (el.dataset.role == 'photopicker') return
 					el.value = el.dataset.role == 'array' ? '[]' : ''
 					if (el.tagsWidget) {
