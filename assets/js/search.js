@@ -23,38 +23,6 @@ function initSearch() {
 		});
 	});
 	
-	function addKeyboardNavigation(input) {
-		input.addEventListener('keydown', debounce(function(event) {
-			if (event.key == 'Enter' || event.key == 'Tab') {
-				let line = event.target.closest('.search_wrap').querySelector('.list .line.selected')
-				if (line) line.click()
-			}
-		}, 500))
-		input.addEventListener('keydown', function(event) {
-			let line = event.target.closest('.search_wrap').querySelector('.list .line.selected')
-			let container = event.target.closest('.search_wrap').querySelector('.list')
-			if (container.configured) container = container.children[0]
-			
-			if (event.key.match(/^Arrow(Up|Down)$/)) {
-				event.preventDefault()
-				let pos = line ? Array.prototype.indexOf.call(container.children, line) : 0
-				
-				if (line && event.key == 'ArrowUp') {
-					pos--
-					if (pos < 0) pos = container.children.length - 1
-				}
-				if (line && event.key == 'ArrowDown') {
-					pos++
-					if (pos >= container.children.length) pos = 0
-				}
-				
-				Array.from(container.children).forEach((line, index) => {
-					line.classList.toggle('selected', index == pos)
-				})
-			}
-		})
-	}
-	
 	document.querySelectorAll('.search-input-field').forEach(input => {
 		
 		addKeyboardNavigation(input)
@@ -307,4 +275,49 @@ async function suggestItemsByName(input, type) {
 				XScroll.updateThumbPosition(list.parentNode)
 			}, 50)
 		});
+}
+
+function addKeyboardNavigation(input) {
+	input.addEventListener('keydown', debounce(function(event) {
+		if (event.key == 'Enter' || event.key == 'Tab') {
+			let line = event.target.closest('.search_wrap').querySelector('.list .line.selected')
+			if (line) line.click()
+		}
+	}, 500))
+	input.addEventListener('keydown', function(event) {
+		let line = event.target.closest('.search_wrap').querySelector('.list .line.selected')
+		let container = event.target.closest('.search_wrap').querySelector('.list')
+		if (container.configured) container = container.children[0]
+		
+		if (event.key.match(/^Arrow(Up|Down)$/)) {
+			event.preventDefault()
+			let pos = line ? Array.prototype.indexOf.call(container.children, line) : 0
+			
+			if (line && event.key == 'ArrowUp') {
+				pos--
+				if (pos < 0) pos = container.children.length - 1
+			}
+			if (line && event.key == 'ArrowDown') {
+				pos++
+				if (pos >= container.children.length) pos = 0
+			}
+			
+			Array.from(container.children).forEach((_line, index) => {
+				if (index == pos) {
+					line = _line
+				}
+				_line.classList.toggle('selected', index == pos)
+			})
+			
+			let el = container.parentNode.configured ? container.parentNode : container
+			
+			let y = line.offsetTop
+			
+			if (y + line.offsetHeight > el.scrollTop + el.clientHeight) {
+				el.scrollTop = y + line.offsetHeight - el.clientHeight
+			} else if (y < el.scrollTop) {
+				el.scrollTop = y
+			}
+		}
+	})
 }

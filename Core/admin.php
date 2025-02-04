@@ -328,10 +328,7 @@
 				outline: none;
 			}
 			
-			.search_wrap.active .dropdown {
-				display: none;
-			}
-			.search_wrap.active .dropdown {
+			.search_wrap .dropdown {
 				display: block;
 				position: absolute;
 				top: 24px;
@@ -343,13 +340,16 @@
 				/* border-top-color: #eee; */
 				left: -0.5px;
 				right: -0.5px;
-				
 				width: 260px;
 				top: 30px;
 				font-size: 14px;
+				max-height: 203px;
 			}
-			.form .search_wrap.active .dropdown {
+			.form .search_wrap .dropdown {
 				width: 100%;
+			}
+			.search_wrap.active .dropdown {
+				display: block;
 			}
 			.search_wrap.active .dropdown .options {
 				font-size: 13px;
@@ -934,7 +934,7 @@
 			.item_selector > .dropdown {
 				display: none;
 				position: absolute;
-				top: 24px;
+				top: 30px;
 				background: #fff;
 				border: 1px solid #dadada;
 				border-radius: 4px;
@@ -2037,13 +2037,14 @@
 					initTagsWidgets();
 					
 					container.querySelectorAll('.item_selector .search-input-field').forEach(input => {
+						
 						input.addEventListener('blur', function(event) {
 							if (!event.target.classList.contains('search-input-field')) return;
 							setTimeout(function() {
 								let selector = event.target.closest('.item_selector')
 								selector.classList.remove('active')
 								event.target.value = ''
-							}, 100)
+							}, 200)
 						});
 						input.closest('.item_selector').querySelector('.list').addEventListener('click', function(event) {
 							let line = event.target.closest('.item_selector .line')
@@ -2053,6 +2054,7 @@
 							result.innerHTML = line.innerHTML
 							document.querySelector('.form [name="' + wrapper.dataset.name + '"]').value = line.children[1].textContent
 						});
+						addKeyboardNavigation(input);
 					});
 					
 					formReady = true;
@@ -2073,9 +2075,11 @@
 				input.parentNode.appendChild(wrapper);
 				
 				wrapper.innerHTML = '<div class="header"><div class="result line"><div></div><div></div><div></div></div><div class="search"><input type="text" class="search-input-field" data-action="search"></div></div>';
-				wrapper.innerHTML += '<div class="dropdown list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="200"></div>';
+				wrapper.innerHTML += '<div class="dropdown list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="40%"></div>';
 				
-				XScroll.init(wrapper.lastElementChild);
+				setTimeout(function() {
+					XScroll.init(wrapper.lastElementChild);
+				}, 10)
 			}
 			
 			async function loadCategories(type) {
@@ -2656,7 +2660,7 @@
 								</div>
 								<div class="dropdown">
 									<div class="options"><span><input type="checkbox" class="form-control form-check-input" id="exact_match"><label for="exact_match">Exact match</label></span><span><input type="checkbox" class="form-control form-check-input" id="search_in_text"><label for="search_in_text">Search in text</label></span></div>
-									<div id="search_variants" class="list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="200"></div>
+									<div id="search_variants" class="list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="40%"></div>
 								</div>
 							</div>
 						</div>
