@@ -225,7 +225,10 @@ class Query
                     if (strtolower($type) == 'datetime' && $value != null) {
                         $value = DateTime::createFromFormat("Y-m-d H:i:s", $value);
                     }
-                    if (strtolower($type) == 'array' && $value != null) {
+                    else if (strtolower($type) == 'date' && $value != null) {
+                        $value = DateTime::createFromFormat("Y-m-d", $value);
+                    }
+                    else if (strtolower($type) == 'array' && $value != null) {
                         $value = json_decode($value, true);
                     }
                 } catch (\Exception $ex) {
@@ -237,6 +240,7 @@ class Query
                     preg_match("/([a-zA-Z0-9]+)Id$/", $column['property'], $matches);
                     if (isset($matches[0])) {
                         $targetFieldName = $matches[1];
+                        if (!property_exists($this->className, $targetFieldName)) continue;
                         $property = new ReflectionProperty($this->className, $targetFieldName);
                         $fullClassName = $property->getType()->getName();
                         $parts = explode('\\', $fullClassName);
@@ -370,6 +374,8 @@ class Query
             $placeholder .= '`' . $key . '` = :'. $key .', ';
         }
         $placeholder = substr($placeholder, 0, -2);
+
+        $fields = array_map(fn($value) => is_bool($value) ? (int) $value : $value, $fields);
 
         $sql = $this->prepareUpdate($placeholder);
         $st = $dbal->prepare($sql);

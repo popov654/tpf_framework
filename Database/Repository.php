@@ -120,7 +120,7 @@ class Repository extends Query
         $data = [];
         array_walk($columns, function($column, $key) use ($entity, &$data) {
             $data[ $column['name'] ] = $entity->$key;
-            if ($data[ $column['name'] ] instanceof \Datetime) {
+            if ($data[ $column['name'] ] instanceof \DateTime) {
                 $data[ $column['name'] ] = $data[ $column['name'] ]->format('Y-m-d H:i:s');
             }
             if (is_array($data[ $column['name'] ])) {

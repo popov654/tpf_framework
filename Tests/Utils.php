@@ -42,7 +42,7 @@ class Utils
     {
         $categories = self::seedCategories();
 
-        $time = new \DateTime();
+        $time = (new \DateTime())->format('Y-m-d H:i:s');
         $posts = [
             [
                 'name' => 'First blog entry',
@@ -90,7 +90,7 @@ class Utils
 
     private static function seedCategories()
     {
-        $time = new \Datetime();
+        $time = (new \Datetime())->format('Y-m-d H:i:s');
         $categories = [
             [
                 'type' => 'blog_post',
@@ -138,7 +138,7 @@ class Utils
 
     private static function seedComments(array $posts)
     {
-        $time = new \Datetime();
+        $time = (new \Datetime())->format('Y-m-d H:i:s');
         $comments = [
             [
                 'type' => 'blog_post',
