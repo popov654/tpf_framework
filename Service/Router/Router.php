@@ -287,6 +287,11 @@ class Router
         }
     }
 
+    public static function isStaticResource(string $path): bool
+    {
+        return preg_match("/\.(html|htm|css|js|eot|ttf|woff|woff2|gif|png|jpg|webp|svg)$/i", $path);
+    }
+
     public static function getClassnameByRealm(?string $realm): string
     {
         global $TPF_CONFIG;
