@@ -25,8 +25,8 @@ function configureFramework(Request $request): Response
         try {
             $errors = configure();
             return new JsonResponse(['status' => 'finished', 'errors' => $errors]);
-        } catch (Exception $e) {
-            return new JsonResponse(['status' => 'fail', 'exception' => $e->getMessage()]);
+        } catch (Throwable $t) {
+            return new JsonResponse(['status' => 'fail', 'exception' => $t->getMessage()]);
         }
     }
 
@@ -89,7 +89,9 @@ function checkDBConnection(Request $request): Response
         new PDO(($request->get('db_type') ?? 'mysql') . ':dbname=' . $dbname . ';host=' . $request->get('db_host'),
             $request->get('db_user') ?? '', $request->get('db_pass') ?? '');
         $result = true;
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) {
+        $result = false;
+    }
 
     return new JsonResponse(['result' => $result]);
 }
@@ -178,8 +180,8 @@ function getEntities(Request $request): Response
         }
 
         return new JsonResponse(['total' => $total, 'data' => $result], 200);
-    } catch (\Exception $e) {
-        return new JsonResponse(['error' => $e->getMessage(), 'data' => null], 400);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => $t->getMessage()], 400);
     }
 }
 
@@ -198,19 +200,23 @@ function getEntity(Request $request): Response
 
     $className = getFullClassNameByType($type);
 
-    $repository = new Repository($className);
-    $entity = $repository->fetchOne($request->get('id'), true, 1);
+    try {
+        $repository = new Repository($className);
+        $entity = $repository->fetchOne($request->get('id'), true, 1);
 
-    if (!$entity) {
-        return new JsonResponse(['error' => 'Element not found'], 404);
+        if (!$entity) {
+            return new JsonResponse(['error' => 'Element not found'], 404);
+        }
+
+        $fields = array_keys($className::getSchema($type));
+        if (in_array('authorId', $fields)) {
+            array_splice($fields, array_search('authorId', $fields) + 1, 0, 'author');
+        }
+
+        return new JsonResponse($entity->getFields($fields), 200);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => $t->getMessage()], 500);
     }
-
-    $fields = array_keys($className::getSchema($type));
-    if (in_array('authorId', $fields)) {
-        array_splice($fields, array_search('authorId', $fields)+1, 0, 'author');
-    }
-
-    return new JsonResponse($entity->getFields($fields), 200);
 }
 
 function getEntityComments(Request $request): Response
@@ -327,8 +333,8 @@ function saveEntity(Request $request): Response
         $entity->save();
 
         return new JsonResponse(['result' => 'ok'], 200);
-    } catch (Exception $e) {
-        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
     }
 }
 
@@ -356,8 +362,8 @@ function setEntitiesCategory(Request $request): Response
         $dbal->exec('UPDATE `' . $type . '` SET `categories`=\'' . $request->get('category') . '\' WHERE `id` IN ('. implode(',', $ids) .')');
 
         return new JsonResponse(['result' => 'ok'], 200);
-    } catch (Exception $e) {
-        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
     }
 }
 
@@ -390,8 +396,8 @@ function deleteEntities(Request $request): Response
         }
 
         return new JsonResponse(['result' => 'ok'], 200);
-    } catch (Exception $e) {
-        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
     }
 }
 
@@ -417,8 +423,8 @@ function restoreEntities(Request $request): Response
         $dbal->exec('UPDATE `' . $type . '` SET `is_deleted`=0 WHERE `id` IN ('. implode(',', $ids) .')');
 
         return new JsonResponse(['result' => 'ok'], 200);
-    } catch (Exception $e) {
-        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
     }
 }
 
@@ -457,8 +463,8 @@ function createCategory(Request $request): Response
         $fields = array_keys(AbstractEntity::getSchema('category'));
 
         return new JsonResponse($category->getFields($fields), 200);
-    } catch (Exception $e) {
-        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
     }
 }
 
@@ -474,8 +480,8 @@ function renameCategory(Request $request): Response
         $category->save();
 
         return new JsonResponse(['result' => 'ok'], 200);
-    } catch (Exception $e) {
-        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
     }
 }
 
@@ -535,8 +541,8 @@ function deleteCategories(Request $request): Response
         }
 
         return new JsonResponse(['result' => 'ok'], 200);
-    } catch (Exception $e) {
-        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
     }
 }
 
@@ -550,8 +556,8 @@ function restoreCategories(Request $request): Response
         $dbal->exec('UPDATE `category` SET `is_deleted`=0 WHERE `id` IN ('. implode(',', $ids) .')');
 
         return new JsonResponse(['result' => 'ok'], 200);
-    } catch (Exception $e) {
-        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
     }
 }
 
