@@ -962,6 +962,26 @@
 				display: block;
 			}
 			
+			#validation_error {
+				display: none;
+				box-sizing: border-box;
+				position: absolute;
+				left: 50%;
+				top: 25px;
+				width: 300px;
+				margin-left: -150px;
+				border: 2px solid #c96a6a;
+				border-radius: 4px;
+				padding: 16px 20px;
+				background: #fcfcfc;
+				z-index: 10;
+			}
+			#validation_error .header {
+				text-align: center;
+				font-weight: bold;
+				margin: 6px 0 13px;
+			}
+			
 			.xscroll_thumb_horz, .xscroll_thumb_vert {
 				background: #cdcdcd;
 				border-radius: 4px;
@@ -1804,6 +1824,10 @@
 						suggestItemsByName(input, selector.dataset.type)
 					});
 					form.addEventListener('input', debounce(function(event) {
+						event.target.closest('.form-control').classList.remove('is-invalid');
+						if (!event.target.closest('.form').querySelector('.is-invalid')) {
+							document.querySelector('#validation_error').style.display = ''
+						}
 						if (!event.target.classList.contains('search-input-field')) return;
 						if (event.target.value.length > 1 && event.target.value.slice(0, 1) == '#') {
 							toggleSearchOptions(false)
@@ -1996,8 +2020,7 @@
 						label.htmlFor = input.id;
 						
 						let fieldName = field;
-						field = field.replace(/([a-z])([A-Z])/g, '$1 $2');
-						field = field[0].toUpperCase() + field.slice(1);
+						field = formatFieldName(field);
 						label.textContent = field;
 						
 						if (label.textContent == 'Categories') label.textContent = 'Category';
@@ -2128,7 +2151,6 @@
 						res = res.sort((a, b) => {
 							return a.parent != b.parent ? a.parent - b.parent : a.id - b.id;
 						});
-						console.log(res);
 						cache.categories[type] = res;
 						sessionStorage.cache = JSON.stringify(cache);
 						
@@ -2380,7 +2402,13 @@
 				})
 					.then(res => res.json())
 					.then(res => {
-						console.log(res)
+						if (res.error) {
+							if (res.exception && res.exception.match(/(^|\s)validation error$/i)) {
+								showValidationError(res.details)
+							}
+							return
+						}
+						//console.log(res)
 						if (!currentItemId) {
 							reloadContent()
 							return
@@ -2390,6 +2418,25 @@
 						TaskManager.removedPhotos = []
 						TaskManager.formChanged = false
 					})
+			}
+			
+			function showValidationError(errors = []) {
+				let block = document.querySelector('#validation_error')
+				if (block) {
+					block.style.display = 'block'
+					let desc = block.querySelector('.details')
+					desc.innerHTML = ''
+					for (let field in errors) {
+						let input = document.querySelector('.form [name="' + field + '"]')
+						input.classList.add('is-invalid')
+						desc.innerHTML += '<div><strong>' + formatFieldName(field) + '</strong> ' + errors[field] + '</div>'
+					}
+				}
+			}
+			
+			function formatFieldName(field) {
+				field = field.replace(/([a-z])([A-Z])/g, '$1 $2')
+				return field[0].toUpperCase() + field.slice(1)
 			}
 			
 			function disableField(field) {
@@ -2809,6 +2856,10 @@
 				<div class="line"><label for="new-category-title">Title</label><input type="text" name="category-name" class="form-control" id="new-category-title"></div>
 				<div class="buttons"><div class="btn btn-primary btn-yes">Create</div><div class="btn btn-primary btn-no">Cancel</div></div>
 			</div>
+		</div>
+		<div id="validation_error">
+			<div class="header">Validation error</div>
+			<div class="details"></div>
 		</div>
 	</body>
 </html>
