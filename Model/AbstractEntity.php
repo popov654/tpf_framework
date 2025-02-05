@@ -4,6 +4,7 @@ namespace Tpf\Model;
 
 use Tpf\Database\Repository;
 use Tpf\Database\Query;
+use Tpf\Database\ValidationException;
 use Tpf\Model\User;
 use Tpf\Service\Auth\PasswordHasher;
 
