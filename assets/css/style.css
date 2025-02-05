@@ -1,0 +1,88 @@
+.form-control {
+    padding: .175rem .5rem;
+    margin: 2px 0 10px;
+}
+label {
+    color: #668;
+    font-size: 0.88em;
+    color: #1a1a1a;
+    font-size: 0.96em;
+    font-family: Tahoma;
+    letter-spacing: 0.5px;
+}
+.form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 2px 1.5px rgba(13,110,253,.25);
+}
+.btn-check:focus+.btn-primary, .btn-primary:focus {
+    box-shadow: 0 0 2px 1.5px rgba(49,132,253,.5);
+}
+.btn-check:focus+.btn, .btn:focus {
+    box-shadow: 0 0 2px 1.5px rgba(13,110,253,.25);
+}
+.btn-check:active+.btn-primary:focus,
+.btn-check:checked+.btn-primary:focus, .btn-primary.active:focus,
+.btn-primary:active:focus,
+.show>.btn-primary.dropdown-toggle:focus {
+    box-shadow: 0 0 2px 1.5px rgba(13,110,253,.25);
+}
+.form-control.is-invalid:focus, .was-validated .form-control:invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 2px 1.5px rgba(220,53,69,.25);
+}
+.btn {
+    padding: 0.34rem 0.8rem;
+    font-size: 0.95rem;
+    line-height: 1.15rem;
+}
+
+/* Colors */
+
+.btn-primary {
+    color: #fff;
+    background-color: #467072;
+    border-color: #42625b;
+}
+.btn-primary:hover {
+    color: #fff;
+    background-color: #4f787d;
+    border-color: #567877;
+}
+.btn-check:focus, .btn-primary:focus {
+    background-color: #4f787d;
+    border-color: #567877;
+    box-shadow: 0 0 2px 1.5px rgba(13,110,93,.25);
+}
+.form-control:focus, .form-check-input:focus {
+    border: 1px solid rgba(13,80,73,.35);
+    box-shadow: 0 0 2px 1.5px rgba(13,110,93,.25);
+}
+.btn-primary.disabled, .btn-primary:disabled {
+    color: #fff;
+    background-color: #687d85;
+    border-color: #5d6c81;
+}
+.btn-check:active+.btn-primary,
+.btn-check:checked+.btn-primary,
+.btn-primary.active,
+.btn-primary:active,
+.show>.btn-primary.dropdown-toggle {
+    color: #fff;
+    background-color: #0b665f;
+    border-color: #0c4a46;
+    box-shadow: 0 0 2px 1.5px rgba(13,110,93,.25);
+}
+.btn-check:active+.btn-primary:focus,
+.btn-check:checked+.btn-primary:focus,
+.btn-primary.active:focus,
+.btn-primary:active:focus,
+.show>.btn-primary.dropdown-toggle:focus {
+    box-shadow: 0 0 2px 1.5px rgba(13,110,93,.25);
+}
+.form-check-input, .form-check-input:active {
+    background-color: #f3f8fa;
+    border-color: #62828b;
+}
+.form-check-input:checked, .form-check-input:checked:active {
+    background-color: #48787a;
+    border-color: #42625b;
+}

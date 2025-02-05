@@ -2,9 +2,9 @@
 <html>
 	<head>
 		<title>Admin panel</title>
-		<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" />
-		<link rel="stylesheet" href="style.css" />
-		<script src="bootstrap/js/bootstrap.min.js"></script>
+		<link rel="stylesheet" href="/tpf/bootstrap/css/bootstrap.min.css" />
+		<link rel="stylesheet" href="/tpf/css/style.css" />
+		<script src="/tpf/bootstrap/js/bootstrap.min.js"></script>
 		<style>
 			body {
 				padding: 0;
