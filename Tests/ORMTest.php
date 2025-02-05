@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Tpf\Database\Repository;
+use Tpf\Database\ValidationException;
 use Tpf\Model\Session;
 use Tpf\Model\User;
 use Tpf\Service\Auth\Auth;
@@ -50,6 +51,25 @@ class ORMTest extends BasicTest
         self::assertNull($user, 'Deleted user should not be loaded from repository by ID');
 
         $dbal->exec('ALTER TABLE `user` AUTO_INCREMENT=0');
+    }
+
+    public function testValidation()
+    {
+        require_once PATH . '/src/Model/Blog/Post.php';
+        $post = new Post();
+        $post->name = ' ';
+
+        $exception = null;
+        try {
+            $post->save();
+        } catch (ValidationException $e) {
+            $exception = $e;
+        }
+
+        self::assertNotNull($exception);
+        self::assertInstanceOf(ValidationException::class, $exception);
+        self::assertGreaterThanOrEqual(1, $post->errors);
+        self::assertArrayHasKey('name', $post->errors);
     }
 
     public function testCreateEntityFromArray()
