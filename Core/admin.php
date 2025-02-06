@@ -982,6 +982,49 @@
 				margin: 6px 0 13px;
 			}
 			
+			#settingsDialog {
+				width: 480px;
+			}
+			#settingsDialog .form-switch {
+				padding-left: 0;
+				padding-right: 2.5em;
+			}
+			#settingsDialog .form-switch .form-check-input {
+				width: 2.3em;
+				margin-right: 0;
+				margin-left: 0;
+				height: 18px;
+			}
+			#settingsDialog .options {
+				padding: 10px 0 18px;
+			}
+			#settingsDialog .options .line {
+				padding: 8px 0;
+			}
+			#settingsDialog label.float-start {
+				margin-top: 4px;
+			}
+			#settingsDialog .line > .float-end {
+				position: relative;
+				top: -3px;
+			}
+			#settingsDialog select {
+				display: inline-block;
+				max-width: 150px;
+				margin-left: 30px;
+			}
+			#settingsDialog .buttons > * {
+				width: 80px;
+			}
+			
+			#confirmDialog {
+				position: absolute;
+				left: 50%;
+				top: 50%;
+				transform: translate(-50%, -50%);
+				z-index: 10;
+			}
+			
 			.xscroll_thumb_horz, .xscroll_thumb_vert {
 				background: #cdcdcd;
 				border-radius: 4px;
@@ -998,6 +1041,25 @@
 		<script src="/tpf/js/widgets.js"></script>
 		<script src="/tpf/js/xscroll.js"></script>
 		<script>
+			
+			let formReady = false
+			
+			let pageSize = 25;
+			let imagePath = '/media/images/';
+			
+			
+			if (!localStorage.settings) localStorage.settings = '{}';
+				
+			window.settings = JSON.parse(localStorage.settings);
+			
+			settings.preserveNavigation = !!settings.preserveNavigation
+			settings.hardDeleteSingleItem = !settings.hardDeleteSingleItem
+			settings.confirmCategoryDelete = !!settings.confirmCategoryDelete
+			settings.confirmCommentDelete = !!settings.confirmCommentDelete
+			
+			localStorage.settings = JSON.stringify(settings);
+			
+			
 			window.addEventListener('DOMContentLoaded', async function() {
 				let links = document.querySelectorAll('#header a')
 				links.forEach(function(link) {
@@ -1143,20 +1205,33 @@
 				
 				function deleteComment(comment) {
 					let soft = !comment.classList.contains('deleted')
-					fetch('/deleteItem?type=comment&ids=[' + comment.dataset.id + ']' + (soft ? '&soft' : ''))
-					.then(res => {
-						if (res.status >= 400) throw {};
-						return res.json()
-					})
-					.catch(() => {
-						comment.classList.remove('deleted')
-					})
-					if (soft) {
-						comment.classList.add('deleted')
-					} else {
-						comments_offset--
-						comment.parentNode.removeChild(comment)
+					let actionConfirm = window.actionConfirm
+					if (soft || !settings.confirmCommentDelete) {
+						actionConfirm = function(message, handler) {
+							try {
+								handler()
+							} catch (e) {}
+						}
 					}
+					let message = 'Are you sure you want to permanently delete this comment?'
+					actionConfirm(message, function() {
+						fetch('/deleteItem?type=comment&ids=[' + comment.dataset.id + ']' + (soft ? '&soft' : ''))
+						.then(res => {
+							if (res.status >= 400) throw {};
+							return res.json()
+						})
+						.catch(() => {
+							comment.classList.remove('deleted')
+						})
+						if (soft) {
+							comment.classList.add('deleted')
+						} else {
+							comments_offset--
+							comment.parentNode.removeChild(comment)
+						}
+						
+						document.getElementById('confirmDialog').style.display = 'none'
+					})
 				}
 				
 				function restoreComment(comment) {
@@ -1189,9 +1264,38 @@
 						window.location.href = logout_url + '?hash=' + session_hash
 					})
 				});
+				
+				document.querySelector('#settingsDialog .options').addEventListener('input', function(event) {
+					let value = event.target.value;
+					let option = event.target.id.replace(/Option$/, '');
+					if (event.target.type == 'checkbox') {
+						value = event.target.checked;
+					}
+					else if (option == 'hardDeleteSingleItem') {
+						value = !!+value;
+					}
+					settings[option] = value;
+					localStorage.settings = JSON.stringify(settings);
+				});
+				
+				updateSettingsDialog();
+				
+				function updateSettingsDialog() {
+					for (var key in settings) {
+						let input = document.getElementById(key + 'Option')
+						if (!input) continue
+						if (input.type == 'checkbox') input.checked = !!settings[key]
+						else if (key == 'hardDeleteSingleItem') input.value = +settings[key]
+						else input.value = settings[key]
+					}
+				}
 
 				function openSettings() {
-
+					document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
+					document.getElementById('settingsDialog').style.display = 'block'
+					
+					document.getElementById('modals').style.visibility = 'visible'
+					setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
 				}
 				
 				function openComments() {
@@ -1436,27 +1540,40 @@
 				
 				function deleteCategory(category) {
 					let soft = !category.classList.contains('deleted')
-					fetch('/deleteCategory?ids=[' + category.dataset.id + ']' + (soft ? '&soft' : ''))
-					.then(res => {
-						if (res.status >= 400) throw {};
-						return res.json()
-					})
-					.then(() => {
-						// Update from backend in case someone else is making edits
-						refreshCategories()
-					})
-					.catch(() => {
-						category.classList.remove('deleted')
-					})
-					let cachedCategory = cache.categories[contentType].find((cat) => cat.id == category.dataset.id)
-					if (soft) {
-						category.classList.add('deleted')
-						if (cachedCategory) cachedCategory.isDeleted = true
-					} else {
-						category.parentNode.removeChild(category)
-						if (cachedCategory) cache.categories[contentType].splice(cache.categories[contentType].indexOf(cachedCategory), 1)
+					let actionConfirm = window.actionConfirm
+					if (soft || !settings.confirmCategoryDelete) {
+						actionConfirm = function(message, handler) {
+							try {
+								handler()
+							} catch (e) {}
+						}
 					}
-					sessionStorage.cache = JSON.stringify(cache)
+					let message = 'Are you sure you want to permanently delete this category and all of its items?'
+					actionConfirm(message, function() {
+						fetch('/deleteCategory?ids=[' + category.dataset.id + ']' + (soft ? '&soft' : ''))
+						.then(res => {
+							if (res.status >= 400) throw {};
+							return res.json()
+						})
+						.then(() => {
+							// Update from backend in case someone else is making edits
+							refreshCategories()
+						})
+						.catch(() => {
+							category.classList.remove('deleted')
+						})
+						let cachedCategory = cache.categories[contentType].find((cat) => cat.id == category.dataset.id)
+						if (soft) {
+							category.classList.add('deleted')
+							if (cachedCategory) cachedCategory.isDeleted = true
+						} else {
+							category.parentNode.removeChild(category)
+							if (cachedCategory) cache.categories[contentType].splice(cache.categories[contentType].indexOf(cachedCategory), 1)
+						}
+						sessionStorage.cache = JSON.stringify(cache)
+						
+						document.getElementById('confirmDialog').style.display = 'none'
+					})
 				}
 				
 				function restoreCategory(category) {
@@ -1525,7 +1642,7 @@
 				
 				document.querySelectorAll('.category-filter').forEach(el => {
 					el.addEventListener('change', function(event) {
-						localStorage.category = preserveNavigation ? this.value : '';
+						localStorage.category = settings.preserveNavigation ? this.value : '';
 						reloadContent();
 					});
 				});
@@ -1705,16 +1822,9 @@
 				return loadContent(window.contentType, pageSize * (window.page - 1), pageSize, autoSelect);
 			}
 			
-			let formReady = false
-			
-			let pageSize = 25;
-			let imagePath = '/media/images/';
-			
-			let preserveNavigation = true;
-			
 			function changePage(value) {
 				window.page = value;
-				localStorage.page = preserveNavigation ? window.page : 1;
+				localStorage.page = settings.preserveNavigation ? window.page : 1;
 				reloadContent();
 			}
 			
@@ -2502,7 +2612,7 @@
 			}
 			
 			function actionConfirm(message, handler) {
-				document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
+				document.querySelectorAll('#modals .dialog:not(#categoriesDialog, #commentsDialog)').forEach(el => el.style.display = 'none')
 				document.getElementById('confirmDialog').style.display = 'block'
 				let text = document.querySelector('#confirmDialog .text')
 				text.innerHTML = message
@@ -2619,7 +2729,7 @@
 				if (!confirm('Are you sure you want to delete this item?')) {
 					return
 				}
-				fetch('/deleteItem?type=' + window.contentType + '&ids=[' + currentItemId + ']')
+				fetch('/deleteItem?type=' + window.contentType + '&ids=[' + currentItemId + ']' + (!settings.hardDeleteSingleItem ? '&soft' : ''))
 					.then(res => res.json())
 					.then(res => {
 						let line = document.querySelector('.aside .list .line.selected')
@@ -2829,11 +2939,11 @@
 			</div>
 		</div>
 		<div id="modals">
-			<div class="dialog" id="confirmDialog">
+			<div class="dialog" id="confirmDialog" data-type="secondary">
 				<div class="text">Are you sure you want to delete this item?</div>
 				<div class="buttons"><div class="btn btn-primary btn-yes">Yes</div><div class="btn btn-primary btn-no">No</div></div>
 			</div>
-			<div class="dialog" id="infoDialog" style="display: none">
+			<div class="dialog" id="infoDialog" data-type="secondary">
 				<div class="text">Operation complete</div>
 				<div class="buttons"><div class="btn btn-primary btn-no">OK</div></div>
 			</div>
@@ -2855,6 +2965,15 @@
 				<div class="line"><label for="new-category-parent">Parent</label><select data-role="set-category" name="categories" class="form-control" id="new-category-parent"><option value="[]">None</option></select></div>
 				<div class="line"><label for="new-category-title">Title</label><input type="text" name="category-name" class="form-control" id="new-category-title"></div>
 				<div class="buttons"><div class="btn btn-primary btn-yes">Create</div><div class="btn btn-primary btn-no">Cancel</div></div>
+			</div>
+			<div class="dialog" id="settingsDialog">
+				<div class="options">
+					<div class="line form-check form-switch"><label for="preserveNavigationOption">Remember last category and page number</label><input class="form-check-input float-end" role="switch" type="checkbox" id="preserveNavigationOption"></div>
+					<div class="line"><label for="hardDeleteSingleItemOption">Delete single items</label><select class="form-control float-end" id="hardDeleteSingleItemOption"><option value="1">Permanently</option><option value="0">To Trash</option></select></div>
+					<div class="line form-check form-switch"><label for="confirmCategoryDeleteOption">Ask before permanently deleting categories</label><input class="form-check-input float-end" role="switch" type="checkbox" id="confirmCategoryDeleteOption"></div>
+					<div class="line form-check form-switch"><label for="confirmCommentDeleteOption">Ask before permanently deleting comments</label><input class="form-check-input float-end" role="switch" type="checkbox" id="confirmCommentDeleteOption"></div>
+				</div>
+				<div class="buttons"><div class="btn btn-primary btn-no">Close</div></div>
 			</div>
 		</div>
 		<div id="validation_error">
