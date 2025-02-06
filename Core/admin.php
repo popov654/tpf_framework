@@ -965,7 +965,8 @@
 					if (soft) {
 						comment.classList.add('deleted')
 					} else {
-						loadComments()
+						comments_offset--
+						comment.parentNode.removeChild(comment)
 					}
 				}
 				
