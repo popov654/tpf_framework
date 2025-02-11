@@ -5,7 +5,7 @@ namespace Tpf\Service\Image;
 class ImageResizer
 {
 
-    public static function resize($filename, $w, $h)
+    public static function resize(string $filename, int $w, int $h)
     {
         $size_img = getimagesize($filename);
         $dest_img = imagecreatetruecolor($w, $h);
@@ -23,12 +23,15 @@ class ImageResizer
         return true;
     }
 
-    public static function resizeAndCrop($filename, $w, $h)
+    public static function resizeAndCrop(string $filename, int $w, int $h, bool $nocrop = false)
     {
         $size_img = getimagesize($filename);
         $ratio = $size_img[0] / $size_img[1];
         $target_ratio = $w / $h;
         if ($w > $size_img[0] || $h > $size_img[1]) {
+            if ($nocrop) {
+                $target_ratio = $ratio;
+            }
             $x = $y = 0;
             $w1 = ($w > $size_img[0]) ? $w : $target_ratio * $h;
             $h1 = ($h > $size_img[1]) ? $h : $w / $target_ratio;
@@ -71,7 +74,7 @@ class ImageResizer
         return true;
     }
 
-    public static function resizeAndCropSaveAspect($filename, $x, $y, $size, $new_size)
+    public static function resizeAndCropToSquare(string $filename, int $x, int $y, int $size, int $new_size)
     {
         $size_img = getimagesize($filename);
         $dest_img = imagecreatetruecolor($new_size, $new_size);
