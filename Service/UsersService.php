@@ -26,6 +26,8 @@ class UsersService
         $user->activationToken = sha1($user->password . $TPF_CONFIG['secret']);
         PasswordHasher::hashPassword($user);
         $user->save();
+
+        return $user;
     }
 
     /**
@@ -53,6 +55,42 @@ class UsersService
     public static function deactivateUser(User $user): void
     {
         $user->isActive = false;
+        $user->save();
+    }
+
+    public static function updateProfile(int $id, array $data): void
+    {
+        global $TPF_CONFIG;
+        if (!isset($TPF_CONFIG['secret'])) {
+            $TPF_CONFIG['secret'] = md5('changeme');
+        }
+
+        $user = User::load($id);
+        if (!$user) {
+            throw new \Exception("User not found");
+        }
+
+        if (isset($data['username']) && !empty(trim($data['username']))) {
+            $user->username = $data['username'];
+        }
+        if (isset($data['email'])) {
+            $user->email = $data['email'];
+        }
+        if (isset($data['firstname'])) {
+            $user->firstname = $data['firstname'];
+        }
+        if (isset($data['lastname'])) {
+            $user->lastname = $data['lastname'];
+        }
+        if (isset($data['photo'])) {
+            $user->photo = $data['photo'];
+        }
+        if (isset($data['password']) && !empty($data['password']) &&
+              isset($data['password_confirm']) && !empty($data['password_confirm']) &&
+              $data['password'] == $data['password_confirm']) {
+            $user->password = $data['password'];
+            PasswordHasher::hashPassword($user);
+        }
         $user->save();
     }
 
