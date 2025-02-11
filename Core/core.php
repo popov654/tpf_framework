@@ -49,14 +49,7 @@ function createDirectories($path): void
 {
     $path = normalizePath($path);
     $path = array_slice(preg_split("/(\\\\|\\/)/", $path), 0, -1);
-    $str = '';
-    foreach ($path as $dir) {
-        if ($str != '') $str .= DIRECTORY_SEPARATOR;
-        $str .= $dir;
-        if (!file_exists($str)) {
-            mkdir($str);
-        }
-    }
+    mkdir(implode(DIRECTORY_SEPARATOR, $path), 0777, true);
 }
 
 function normalizePath($path): string

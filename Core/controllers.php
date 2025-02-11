@@ -609,6 +609,7 @@ function uploadFile(Request $request): Response
     global $TPF_CONFIG;
 
     $upload_dir = ($TPF_CONFIG['upload_dir'] ?? '/media/');
+    if (substr($upload_dir, -1) != '/') $upload_dir .= '/';
 
     $file = $request->files->get('file');
     $name = $file->getClientOriginalName();
