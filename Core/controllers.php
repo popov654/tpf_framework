@@ -12,6 +12,7 @@ use Tpf\Model\Comment;
 use Tpf\Model\User;
 use Tpf\Model\Category;
 use Tpf\Service\Auth\LoginService;
+use Tpf\Service\Image\ImageResizer;
 use Tpf\Service\UsersService;
 use Tpf\Service\ErrorPage;
 
@@ -623,7 +624,41 @@ function uploadFile(Request $request): Response
     $uname = uniqid().$extension;
     $dir = in_array($extension, ['.jpg', '.png', '.jpeg', '.gif', '.bmp', '.tif', '.tiff', '.webp']) ? 'images' :
             (in_array($extension, ['.avi', '.mp4', '.mpg', '.m4v', '.mov', '.mkv', '.flv']) ? 'videos' : 'files');
+
+    mkdir(PATH . '/public' . $upload_dir . $dir, 077, true);
+
     $file->move(PATH . '/public' . $upload_dir . $dir, $uname);
+
+    if ($request->get('type') == 'avatar' && $dir == 'images') {
+        mkdir(PATH . '/public' . $upload_dir . $dir . '/users/thumb', 077, true);
+
+        $width = $TPF_CONFIG['images']['avatar']['full_width'] ?? 180;
+        $height = $TPF_CONFIG['images']['avatar']['full_height'] ?? 280;
+        ImageResizer::resizeAndCrop(PATH . '/public' . $upload_dir . $dir . $uname, $width, $height);
+
+        $file->copy(PATH . '/public' . $upload_dir . $dir . '/users/', $uname);
+        $width = $TPF_CONFIG['images']['avatar']['width'] ?? 80;
+        $filepath = PATH . '/public' . $upload_dir . $dir . '/users/thumb/' . $uname;
+
+        if ($request->get('x') && $request->get('y') && $request->get('size')) {
+            ImageResizer::resizeAndCropToSquare($filepath, $request->get('x'), $request->get('y'), $request->get('size'), $width);
+        } else {
+            ImageResizer::resize($filepath, $width, $width);
+        }
+    } else if ($dir == 'images') {
+        mkdir(PATH . '/public' . $upload_dir . $dir . '/thumb');
+
+        $file->copy(PATH . '/public' . $upload_dir . $dir . '/thumb/', $uname);
+        $width = $TPF_CONFIG['images']['image']['width'] ?? 1600;
+        $height = $TPF_CONFIG['images']['image']['heigh'] ?? 1200;
+        $filepath = PATH . '/public' . $upload_dir . $dir . '/thumb/' . $uname;
+
+        if ($request->get('x') && $request->get('y') && $request->get('size')) {
+            ImageResizer::resizeAndCropToSquare($filepath, $request->get('x'), $request->get('y'), $request->get('size'), $width);
+        } else {
+            ImageResizer::resize($filepath, $width, $height);
+        }
+    }
 
     return new JsonResponse(['status' => 'ok', 'url' => $upload_dir . $dir . '/' . $uname]);
 }

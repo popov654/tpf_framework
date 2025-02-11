@@ -18,12 +18,25 @@
             'password' => 'password',
             'secure' => true,
         ],
+        'images' => [
+            'image' => [
+                'width' => 1200,
+                'height' => 800
+            ],
+            'avatar' => [
+                'full_width' => 180,
+                'full_height' => 280,
+                'width' => 80,
+                'height' => 80
+            ]
+        ],
         'realms' => [
-            'Blog' => ['item' => 'post', 'category' => 'topic'],
-            'Forum' => ['item' => 'post', 'category' => 'thread'],
-            'Shop' => ['item' => 'item', 'category' => 'category'],
+            'blog' => ['item' => 'post', 'category' => 'topic'],
+            'forum' => ['item' => 'post', 'category' => 'thread'],
+            'shop' => ['item' => 'item', 'category' => 'category'],
             'support' => ['item' => 'ticket', 'category' => null]
         ],
+        'upload_dir' => '/media/'
     ];
 
 ?>
