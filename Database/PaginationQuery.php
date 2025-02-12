@@ -30,9 +30,9 @@ class PaginationQuery extends Query
      */
     public function getNumberOfPages()
     {
-        global $wpdb;
+        global $dbal;
 
-        $response = $wpdb->get_results($this->prepareSelect("count(1) as `count`"));
+        $response = $dbal->get_results($this->prepareSelect("count(1) as `count`"));
         $rows = isset($response[0])
             ? $response[0]->count
             : 0;
