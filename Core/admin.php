@@ -1089,15 +1089,6 @@
 			
 			
 			window.addEventListener('DOMContentLoaded', async function() {
-				let links = document.querySelectorAll('#header a')
-				links.forEach(function(link) {
-					link.onclick = function(event) {
-						event.preventDefault();
-						localStorage.currentPage = link.getAttribute('href');
-						// updatePage();
-					}
-				});
-				
 				if (localStorage.currentPage) {
 					updatePage();
 				}
@@ -1823,6 +1814,7 @@
 				window.currentItemId = 0
 				
 				document.getElementById('subheader-content').style.display = (section == 'content' ? '' : 'none')
+				document.getElementById('categories-toggle-wrap').style.display = (section == 'content' ? '' : 'none')
 				
 				if (section == 'content') {
 					let link = document.querySelector('#subheader-content .item_types .link.active') || document.querySelector('#subheader-content .item_types .link')
