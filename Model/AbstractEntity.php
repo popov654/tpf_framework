@@ -153,7 +153,7 @@ abstract class AbstractEntity
             if (($type == 'text' || $type == 'array') && preg_match("/(^|_)(photos|images|pictures)(_|$)/", $col['Field'])) {
                 $type = 'image_list';
             }
-            if ($col['Field'] == 'name' || $col['Field'] == 'title') {
+            if ($col['Field'] == 'name' || $col['Field'] == 'title' || $table == 'user' && $col['Field'] == 'username') {
                 $type = 'short_text';
             }
             $field = preg_replace_callback("/_[a-z]/", function ($matches) {
