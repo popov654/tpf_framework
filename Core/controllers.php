@@ -255,12 +255,10 @@ function getEntityComments(Request $request): Response
 
     $total = $commentsRepository->count();
 
-    $fields = array_keys($className::getSchema('comment'));
-
     $result = [];
 
     foreach ($comments as $comment) {
-        $data = $comment->getFields($fields);
+        $data = $comment->getAllFields();
         $data['author'] = $comment->author->getFields(['id', 'username', 'firstname', 'lastname', 'photo']);
         $result[] = $data;
     }
@@ -297,10 +295,8 @@ function getCategoriesByType(Request $request): Response
 
     $result = [];
 
-    $fields = array_keys(AbstractEntity::getSchema('category'));
-
     foreach ($categories as $category) {
-        $result[] = transformKeys($category->getFields($fields), ['idPath' => 'id_path']);
+        $result[] = transformKeys($category->getFields(), ['idPath' => 'id_path']);
     }
 
     return new JsonResponse($result, 200);
@@ -471,9 +467,7 @@ function createCategory(Request $request): Response
         $category->setParent($parent);
         $category->save();
 
-        $fields = array_keys(AbstractEntity::getSchema('category'));
-
-        return new JsonResponse($category->getFields($fields), 200);
+        return new JsonResponse($category->getFields(), 200);
     } catch (Throwable $t) {
         return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
     }

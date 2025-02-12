@@ -100,12 +100,15 @@ abstract class AbstractEntity
         return $this->getFields(array_keys(AbstractEntity::getSchema($table)));
     }
 
-    public function getFields(array $fields): array
+    public function getFields(?array $fields = null): array
     {
-        $data = [];
+        if (!$fields) {
+            $fields = $this->getAllFields();
+        }
         if ($fields !== [] && array_keys($fields) !== range(0, count($fields) - 1)) {
             $fields = array_keys($fields);
         }
+        $data = [];
         foreach ($fields as $field) {
             if (!array_key_exists($field, get_object_vars($this))) continue;
             $data[$field] = $this->$field;
