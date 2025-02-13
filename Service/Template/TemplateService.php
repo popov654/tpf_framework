@@ -9,7 +9,7 @@ class TemplateService
     {
         global $TPF_CONFIG, $TPF_REQUEST;
 
-        $cacheBypass = ['install'];
+        $cacheBypass = ['install', 'error/500'];
 
         $cacheTime = $TPF_CONFIG['cache']['templates'] ?? 'auto';
         $cachedTemplatePath = PATH . '/var/cache/templates/' . $template . '.tpf';
