@@ -224,34 +224,43 @@ function dbConnect(?bool $force = false): void
     if (!$force && $dbal) {
         return;
     }
-    $dbal = new PDO(($TPF_CONFIG['db']['type'] ?? 'mysql') . ':dbname='. $TPF_CONFIG['db']['database'] .';host='. ($TPF_CONFIG['db']['host'] ?? 'localhost'),
-        $TPF_CONFIG['db']['user'] ?? 'admin',
-        $TPF_CONFIG['db']['password'] ?? 'password',
-        array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '". ($TPF_CONFIG['db']['charset'] ?? 'utf8') ."'")
-    );
+    try {
+        $dbal = new PDO(($TPF_CONFIG['db']['type'] ?? 'mysql:') . (isset($TPF_CONFIG['db']['database']) ? 'dbname=' . $TPF_CONFIG['db']['database'] . ';' : '') . 'host=' . ($TPF_CONFIG['db']['host'] ?? 'localhost'),
+            $TPF_CONFIG['db']['user'] ?? 'admin',
+            $TPF_CONFIG['db']['password'] ?? 'password',
+            array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '" . ($TPF_CONFIG['db']['charset'] ?? 'utf8') . "'")
+        );
+    } catch (PDOException $e) {
+        $dbName = $TPF_CONFIG['db']['database'];
+        $dbal = new PDO(($TPF_CONFIG['db']['type'] ?? 'mysql') . ':host=' . ($TPF_CONFIG['db']['host'] ?? 'localhost'),
+            $TPF_CONFIG['db']['user'] ?? 'admin',
+            $TPF_CONFIG['db']['password'] ?? 'password',
+            array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES '" . ($TPF_CONFIG['db']['charset'] ?? 'utf8') . "'")
+        );
+        $dbal->exec("CREATE DATABASE IF NOT EXISTS `". $TPF_CONFIG['db']['database'] ."`");
+        sleep(1);
+        $dbal->exec("USE `" . $TPF_CONFIG['db']['database'] . "`");
+    }
 }
 
 function createDB(array $tables): void {
     global $dbal, $TPF_CONFIG;
 
-    $dbal->exec("CREATE DATABASE IF NOT EXISTS` ". $TPF_CONFIG['db']['database'] ."`");
-
-    $systemEntities = ['User', 'Session'];
+    $systemTables = ['user', 'session', 'category', 'comment'];
 
     foreach ($tables as $table) {
-        if (in_array($table, $systemEntities)) {
-            $path = realpath(dirname(__DIR__)) . '/' . $table . '.php';
-            $fullClassName = 'Tpf\\Model\\' . $table;
+        $table = strtolower($table);
+        if (in_array($table, $systemTables)) {
+            $path = PATH . '/vendor/' . VENDOR_PATH . '/Model/' . $table . '.php';
+            $fullClassName = 'Tpf\\Model\\' . ucfirst($table);
         } else {
             $realm = explode('_', $table)[0];
-            $directoryPath = dirname(__DIR__);
-            $directoryPath = preg_replace("/(\\\\|\\/)vendor(\\\\|\\/)tpf$/", "", $directoryPath);
             $parts = explode('_', $table);
-            $className = ucfirst(count($parts) == 2 ? $parts[1] : $parts[0]);
-            $path = $directoryPath . '/src/Model/' . $realm . '/' . $className . '.php';
+            $className = implode('\\', array_slice(array_map(function($el) { return ucfirst($el); }, $parts), 1));
+            $path = PATH . '/src/Model/' . $realm . '/' . str_replace('\\', '/', $className) . '.php';
             $fullClassName = 'App\\Model\\' . ucfirst(explode('_', $table)[0]) . '\\' . $className;
+            require_once $path;
         }
-        if (!in_array($table, $systemEntities)) require_once $path;
         Repository::createTableByClass($fullClassName, $table);
     }
 }

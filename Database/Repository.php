@@ -194,6 +194,14 @@ class Repository extends Query
     {
         global $dbal, $TPF_CONFIG;
 
+        if ($tableName) {
+            if (gettype($tableName) != 'string') {
+                $tableName = null;
+            } else {
+                $tableName = lcfirst($tableName);
+            }
+        }
+
         $charset = $TPF_CONFIG['db']['charset'] ?? 'utf8';
         $tableName = $tableName ?? static::getTableNameByClass($className);
 
@@ -204,7 +212,7 @@ class Repository extends Query
         $sqlColumns = implode(",\n", $columns);
         $sql = "CREATE TABLE IF NOT EXISTS `$tableName` (" . $sqlColumns . ", PRIMARY KEY(`id`)) CHARSET " .$charset;
 
-        static::exec($sql);
+        $dbal->exec($sql);
 
         /** create indexes */
 
@@ -292,9 +300,10 @@ class Repository extends Query
                         break;
 
                     case "int":
-                        $columnFull = "`$name` INTEGER(11) NOT NULL DEFAULT 0";
+                        $columnFull = "`$name` INT NOT NULL";
                         if ($name == static::PRIMARY_COLUMN_KEY)
                             $columnFull .= " AUTO_INCREMENT";
+                        else $columnFull .= " DEFAULT 0";
                         break;
 
                     case "float":
