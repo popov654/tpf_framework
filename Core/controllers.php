@@ -234,27 +234,6 @@ function getCategoriesByType(Request $request): Response
         $result[] = $category->getFields($fields);
     }
 
-    foreach ($result as &$category) {
-        $category['id_path'] = [$category['id']];
-        $category['path'] = [$category['name']];
-
-        if ($category['parent'] > 0) {
-            $current = $category;
-            while ($current != null && $current['parent'] != 0) {
-                $current = array_values(array_filter($result, function($item) use (&$current) {
-                    return $item['id'] == $current['parent'];
-                }));
-                if (!empty($current)) {
-                    $current = $current[0];
-                    array_unshift($category['id_path'], $current['id']);
-                    array_unshift($category['path'], $current['name']);
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-
     return new JsonResponse($result, 200);
 }
 

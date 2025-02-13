@@ -126,7 +126,7 @@ class Utils
             $category = new Category();
             $result[] = $category;
             AbstractEntity::fillFromArray($category, $categoryData);
-            $category->parent = $parentId;
+            $category->setParent($parentId);
             $category->save();
             if ($parentId == 0) {
                 $parentId = $category->id;

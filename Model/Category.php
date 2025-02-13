@@ -15,6 +15,8 @@ class Category extends AbstractEntity
      * @property bool $isDeleted
      * @property datetime $createdAt
      * @property datetime $modifiedAt
+     * @property json $idPath
+     * @property json $path
      */
 
     public ?int $id;
@@ -28,6 +30,9 @@ class Category extends AbstractEntity
     public \Datetime $createdAt;
     public \Datetime $modifiedAt;
 
+    public array $idPath = [];
+    public array $path = [];
+
     
     public function __construct()
     {
@@ -35,5 +40,26 @@ class Category extends AbstractEntity
         $now = new \DateTime();
         $this->createdAt = $now;
         $this->modifiedAt = $now;
+    }
+
+    public function setParent(int $id)
+    {
+        $this->parent = $id;
+        $this->updateParents();
+    }
+
+    public function updateParents()
+    {
+        $parent = $this->parent;
+        $this->parents = [$this->id];
+        $this->path = [$this->name];
+        $maxDepth = 100;
+        while ($parent && $maxDepth > 0) {
+            $parentCategory = Category::load($parent);
+            array_unshift($this->parents, $parentCategory->id);
+            array_unshift($this->path, $parentCategory->name);
+            $parent = $parentCategory->parent;
+            $maxDepth--;
+        }
     }
 }
