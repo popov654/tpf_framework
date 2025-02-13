@@ -36,36 +36,44 @@ class ImageIo
         return $src_img;
     }
 
-    public static function exportImage(object $image, string $filename): bool
+    public static function exportImage(object $image, string $filename, ?string $format = null): bool
     {
         global $TPF_CONFIG;
 
-        $format = strtolower($TPF_CONFIG['images']['format'] ?? 'png');
+        if (!$format) {
+            if (strrpos($filename, ".") !== false) {
+                $format = substr($filename, strrpos($filename, ".") + 1);
+            } else {
+                $format = strtolower($TPF_CONFIG['images']['format'] ?? 'png');
+            }
+        }
+
+        $filename .= '.' . $format;
 
         $res = false;
 
         switch ($format) {
             case 'gif':
-                $res = imagegif($filename);
+                $res = imagegif($image, $filename);
                 break;
             case 'jpg':
             case 'jpeg':
-                $res = imagejpeg($filename);
+                $res = imagejpeg($image, $filename);
                 break;
             case 'png':
-                $res = imagepng($filename);
+                $res = imagepng($image, $filename);
                 break;
             case 'bmp':
                 if (!function_exists('imagebmp')) {
                     throw new \Exception("Unsupported image type");
                 }
-                $res = imagebmp($filename);
+                $res = imagebmp($image, $filename);
                 break;
             case 'webp':
                 if (!function_exists('imagewebp')) {
                     throw new \Exception("Unsupported image type");
                 }
-                $res = imagewebp($filename);
+                $res = imagewebp($image, $filename);
                 break;
             case 'avif':
                 if (!function_exists('imageavif')) {

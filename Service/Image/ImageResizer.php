@@ -16,7 +16,7 @@ class ImageResizer
         if (!imagecopyresampled($dest_img, $src_img, 0, 0, ($size_img[0] - $d) / 2, ($size_img[1] - $d) / 2, $w, $h, $d, $d)) return false;
         unlink($filename);
 
-        ImageIo::exportImage($dest_img, substr($filename, 0, strrpos($filename, ".")) . ".png");
+        ImageIo::exportImage($dest_img, substr($filename, 0, strrpos($filename, ".")));
         imagedestroy($dest_img);
         imagedestroy($src_img);
 
@@ -44,7 +44,7 @@ class ImageResizer
                 $w = $size_img[0];
             }
         } else {
-            if ($size_img[0] > $size_img[1]) {
+            if ($size_img[0] > $size_img[1] * $target_ratio) {
                 $x = ($size_img[0] - $size_img[1] * $target_ratio) / 2;
                 $y = 0;
                 $w1 = $w;
@@ -64,10 +64,10 @@ class ImageResizer
         imagealphablending($dest_img, false);
         imagesavealpha($dest_img, true);
         $src_img = ImageIo::createImage($filename, $size_img[2]);
-        if (!imagecopyresampled($dest_img, $src_img, 0, 0, $x, $y, $w1, $h1, $w, $h)) return false;
+        if (!imagecopyresampled($dest_img, $src_img, 0, 0, (int) $x, (int) $y, (int) $w1, (int) $h1, (int) $w, (int) $h)) return false;
         unlink($filename);
 
-        ImageIo::exportImage($dest_img, substr($filename, 0, strrpos($filename, ".")) . ".png");
+        ImageIo::exportImage($dest_img, substr($filename, 0, strrpos($filename, ".")));
         imagedestroy($dest_img);
         imagedestroy($src_img);
 
@@ -84,7 +84,7 @@ class ImageResizer
         if (!imagecopyresampled($dest_img, $src_img, 0, 0, $x, $y, $new_size, $new_size, $size, $size)) return false;
         unlink($filename);
 
-        ImageIo::exportImage($dest_img, substr($filename, 0, strrpos($filename, ".")) . ".png");
+        ImageIo::exportImage($dest_img, substr($filename, 0, strrpos($filename, ".")));
         imagedestroy($dest_img);
         imagedestroy($src_img);
 

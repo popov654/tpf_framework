@@ -49,7 +49,14 @@ function createDirectories($path): void
 {
     $path = normalizePath($path);
     $path = array_slice(preg_split("/(\\\\|\\/)/", $path), 0, -1);
-    mkdir(implode(DIRECTORY_SEPARATOR, $path), 0777, true);
+    $str = '';
+    foreach ($path as $dir) {
+        if ($str != '') $str .= DIRECTORY_SEPARATOR;
+        $str .= $dir;
+        if (!file_exists($str)) {
+            mkdir($str);
+        }
+    }
 }
 
 function normalizePath($path): string
@@ -89,7 +96,10 @@ function arrayToCode($value): string
                 return "'" . str_replace("'", "\\'", $value->toString()) . "'";
             }
             $result = '';
-            foreach (get_class_vars(get_class($value)) as $key => $val) {
+            foreach (get_object_vars($value) as $key => $val) {
+                if (!isset($value->$key)) {
+                    continue;
+                }
                 if ($result != '') {
                     $result .= ', ';
                 }

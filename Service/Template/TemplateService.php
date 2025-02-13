@@ -16,7 +16,7 @@ class TemplateService
         $isExpired = $cachedTemplatePath != 'auto' && is_numeric($cacheTime) &&
             file_exists($cachedTemplatePath) && time() - filemtime($cachedTemplatePath) > (int) $cacheTime;
 
-        if ($cacheTime == 'auto' && filemtime(self::getTemplatePath($template, $suppressErrors)) > filemtime($cachedTemplatePath)) {
+        if ($cacheTime == 'auto' && file_exists($cachedTemplatePath) && filemtime(self::getTemplatePath($template, $suppressErrors)) > filemtime($cachedTemplatePath)) {
             $isExpired = true;
         }
 

@@ -654,18 +654,28 @@ function uploadFile(Request $request): Response
     $dir = in_array($extension, ['.jpg', '.png', '.jpeg', '.gif', '.bmp', '.tif', '.tiff', '.webp']) ? 'images' :
             (in_array($extension, ['.avi', '.mp4', '.mpg', '.m4v', '.mov', '.mkv', '.flv']) ? 'videos' : 'files');
 
-    mkdir(PATH . '/public' . $upload_dir . $dir, 077, true);
+    createDirectories(PATH . '/public' . $upload_dir . $dir . '/' . $uname);
 
+    /** @var File $file */
     $file->move(PATH . '/public' . $upload_dir . $dir, $uname);
 
+    $imagePath = null;
+
     if ($request->get('type') == 'avatar' && $dir == 'images') {
-        mkdir(PATH . '/public' . $upload_dir . $dir . '/users/thumb', 077, true);
+        createDirectories(PATH . '/public' . $upload_dir . $dir . '/users/thumb/' . $uname);
 
         $width = $TPF_CONFIG['images']['avatar']['full_width'] ?? 180;
         $height = $TPF_CONFIG['images']['avatar']['full_height'] ?? 280;
-        ImageResizer::resizeAndCrop(PATH . '/public' . $upload_dir . $dir . $uname, $width, $height);
 
-        $file->copy(PATH . '/public' . $upload_dir . $dir . '/users/', $uname);
+        copy(PATH . '/public' . $upload_dir . $dir . '/' . $uname, PATH . '/public' . $upload_dir . $dir . '/users/' . $uname);
+        unlink(PATH . '/public' . $upload_dir . $dir . '/' . $uname);
+
+        copy(PATH . '/public' . $upload_dir . $dir . '/users/' . $uname, PATH . '/public' . $upload_dir . $dir . '/users/thumb/' . $uname);
+
+        ImageResizer::resizeAndCrop(PATH . '/public' . $upload_dir . $dir . '/users/' . $uname, $width, $height);
+
+        $imagePath = preg_replace('/\\.[a-z]+$/', '.' . ($TPF_CONFIG['images']['format'] ?? 'png'), $upload_dir . $dir . '/users/' . $uname);
+
         $width = $TPF_CONFIG['images']['avatar']['width'] ?? 80;
         $filepath = PATH . '/public' . $upload_dir . $dir . '/users/thumb/' . $uname;
 
@@ -675,9 +685,10 @@ function uploadFile(Request $request): Response
             ImageResizer::resize($filepath, $width, $width);
         }
     } else if ($dir == 'images') {
-        mkdir(PATH . '/public' . $upload_dir . $dir . '/thumb');
+        createDirectories(PATH . '/public' . $upload_dir . $dir . '/thumb/' . $uname);
 
-        $file->copy(PATH . '/public' . $upload_dir . $dir . '/thumb/', $uname);
+        copy(PATH . '/public' . $upload_dir . $dir . '/' . $uname, PATH . '/public' . $upload_dir . $dir . '/thumb/' . $uname);
+
         $width = $TPF_CONFIG['images']['image']['width'] ?? 1600;
         $height = $TPF_CONFIG['images']['image']['heigh'] ?? 1200;
         $filepath = PATH . '/public' . $upload_dir . $dir . '/thumb/' . $uname;
@@ -687,9 +698,11 @@ function uploadFile(Request $request): Response
         } else {
             ImageResizer::resize($filepath, $width, $height);
         }
+
+        $imagePath = preg_replace('/\\.[a-z]+$/', '.' . ($TPF_CONFIG['images']['format'] ?? 'png'), $upload_dir . $dir . '/' . $uname);
     }
 
-    return new JsonResponse(['status' => 'ok', 'url' => $upload_dir . $dir . '/' . $uname]);
+    return new JsonResponse(['status' => 'ok', 'url' => $imagePath ?? $upload_dir . $dir . '/' . $uname]);
 }
 
 function removeFile(Request $request): Response
