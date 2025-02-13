@@ -96,7 +96,11 @@ class Router
         } else if (!isset($TPF_REQUEST['session'])) {
             return new RedirectResponse(($TPF_CONFIG['auth_url'] ?? '/login') . '?redirect_uri=admin');
         }
-        return self::__route(null, null, null, null, $request);
+        ob_start();
+        require_once PATH . '/vendor/' . VENDOR_PATH . '/Core/admin.php';
+        $response = ob_get_clean();
+        return new Response($response);
+        //return self::__route(null, null, null, null, $request);
     }
 
     private static function __route(?string $realm, ?string $category, ?string $subcategory, ?string $id, Request $request): Response
@@ -217,12 +221,12 @@ class Router
 
     private static function processSystemAssets(Request $request)
     {
-        if (preg_match("/\/tpf\/([^\/]+\/)*(css|js|icons)\/((?:[a-z0-9_-]+\.)+)(\\2(?:\.map)?|gif|png|jpg|webp|svg)$/i", $request->getPathInfo(), $matches)) {
-            $path = PATH . '/vendor/' . VENDOR_PATH . '/assets/' . ($matches[1] ?? '') . $matches[2] . '/' . $matches[3] . $matches[4];
+        if (preg_match("/\/tpf\/([^\/]+\/)*(css|js|icons)\/([^\/]+\/)*((?:[a-z0-9_-]+\.)+)(\\2(?:\.map)?|gif|png|jpg|webp|svg)$/i", $request->getPathInfo(), $matches)) {
+            $path = PATH . '/vendor/' . VENDOR_PATH . '/assets/' . ($matches[1] ?? '') . $matches[2] . '/' . ($matches[3] ?? '') . $matches[4] . $matches[5];
             if (file_exists($path)) {
                 $types = ['css' => 'text/css', 'js' => 'text/javascript', 'ttf' => 'font/ttf', 'woff' => 'font/woff', 'eot' => 'font/eot', 'html' => 'text/html', 'svg' => 'image/svg+xml', 'gif' => 'image/gif', 'jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'];
                 $response = new Response(file_get_contents($path));
-                $type = preg_match("/^(css|js)\.map$/", $matches[4]) ? substr($matches[4], 0, -4) : $matches[4];
+                $type = preg_match("/^(css|js)\.map$/", $matches[5]) ? substr($matches[5], 0, -4) : $matches[5];
                 if (isset($types[$type])) {
                     $response->headers->add(['Content-Type' => $types[$type]]);
                 } else {

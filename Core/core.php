@@ -247,7 +247,8 @@ function dbConnect(?bool $force = false): void
     }
 }
 
-function createDB(array $tables): void {
+function createDB(array $tables): void
+{
     global $dbal, $TPF_CONFIG;
 
     $systemTables = ['user', 'session', 'category', 'comment'];
@@ -269,7 +270,8 @@ function createDB(array $tables): void {
     }
 }
 
-function renameDB(string $newName, ?string $oldPrefix = null): void {
+function renameDB(string $newName, ?string $oldPrefix = null): void
+{
     global $dbal, $TPF_CONFIG;
     $oldName = $TPF_CONFIG['db']['database'];
     $dbal->exec("CREATE DATABASE `". $newName ."`");
@@ -284,6 +286,19 @@ function renameDB(string $newName, ?string $oldPrefix = null): void {
         $dbal->exec("RENAME TABLE `".$oldName."`.`".$oldTableName."` TO `". $newName ."`.`".$newTableName."`");
     }
     $dbal->exec("DROP DATABASE `". $oldName ."`");
+}
+
+function transformKeys(array $data, array $keys): array
+{
+    $result = $data;
+    foreach ($keys as $from => $to) {
+        if (isset($result[$from])) {
+            $result[$to] = $result[$from];
+            unset($result[$from]);
+        }
+    }
+
+    return $result;
 }
 
 function getRealmEntityNames($realm = '*'): array

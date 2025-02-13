@@ -250,7 +250,7 @@ function getCategoriesByType(Request $request): Response
     $fields = array_keys(AbstractEntity::getSchema('category'));
 
     foreach ($categories as $category) {
-        $result[] = $category->getFields($fields);
+        $result[] = transformKeys($category->getFields($fields), ['idPath' => 'id_path']);
     }
 
     return new JsonResponse($result, 200);
