@@ -93,6 +93,12 @@ abstract class AbstractEntity
         }
     }
 
+    public function getAllFields(): array
+    {
+        $table = Repository::getTableNameByClass(get_called_class());
+        return $this->getFields(array_keys(AbstractEntity::getSchema($table)));
+    }
+
     public function getFields(array $fields): array
     {
         $data = [];

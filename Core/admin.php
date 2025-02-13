@@ -114,6 +114,10 @@
 				box-sizing: border-box;
 				padding: 16px;
 			}
+			#categories-toggle-wrap {
+				float: right;
+				margin-right: 4px;
+			}
 			#subheader-content {
 				display: flex;
 				align-items: baseline;
@@ -722,7 +726,7 @@
 				background: #f1d5d5;
 				border-color: #c8b8b8;
 			}
-			.comment .actions {
+			.comment .actions, .category > .actions {
 				position: absolute;
 				top: 6px;
 				right: 10px;
@@ -743,29 +747,36 @@
 				display: inline-block;
 				margin: 0 10px 0 0;
 			}
-			.comment .actions .btn {
+			.comment .actions .btn, .category .actions .btn {
 				opacity: 0.75;
 			}
-			.comment .actions .btn:hover {
+			.comment .actions .btn:hover, .category .actions .btn:hover {
 				opacity: 1;
 			}
-			.comment .btn.edit, .comment .btn.delete, .comment .btn.restore {
+			.comment .btn.edit, .comment .btn.delete, .comment .btn.restore,
+			.category .btn.edit, .category .btn.delete, .category .btn.restore {
 				display: inline-block;
 				width: 24px;
 				height: 24px;
 			}
-			.comment .btn.edit {
+			.comment .btn.edit, .category .btn.edit {
 				background: url('/tpf/icons/edit-comment.svg') center / 24px no-repeat;
 			}
-			.comment .btn.delete {
+			.comment .btn.delete, .category .btn.delete {
 				background: url('/tpf/icons/delete-comment.svg') center / 22px no-repeat;
 			}
-			.comment .btn.restore {
+			.comment .btn.restore, .category .btn.restore {
 				background: url('/tpf/icons/restore-comment.svg') center / 22px no-repeat;
 				display: none;
 			}
-			.comment.deleted .btn.restore {
+			.comment.deleted .btn.restore, .category.deleted .btn.restore {
 				display: inline-block;
+			}
+			.category .header > .actions {
+				visibility: hidden;
+			}
+			.category .header:hover > .actions {
+				visibility: visible;
 			}
 			.comment textarea {
 				display: block;
@@ -783,6 +794,97 @@
 			}
 			.comment .link:hover {
 				text-decoration: underline;
+			}
+			#categoriesDialog > .list {
+				width: 540px;
+				height: 400px;
+				border: 1px solid #dadada;
+				border-radius: 4px;
+			}
+			#categoriesDialog .list.children {
+				border: none;
+				margin: 0 0 0 40px;
+			}
+			#categoriesDialog .category {
+				cursor: default;
+				position: relative;
+				border-radius: 4px;
+			}
+			#categoriesDialog > .list > .category {
+				border-radius: 0;
+			}
+			#categoriesDialog .category .btn.add-child {
+				display: none;
+				width: 24px;
+				height: 24px;
+				background: url('/tpf/icons/create-category.svg') center / 20px no-repeat;
+				opacity: 0.75;
+				position: absolute;
+				left: 2px;
+				bottom: 4px;
+			}
+			#categoriesDialog .category:has(> .children > *) > .btn.add-child {
+				display: block;
+			}
+			.category .btn.add-child:hover {
+				opacity: 1;
+			}
+			#categoriesDialog .header {
+				padding: 4px;
+				border-radius: 3px;
+				position: relative;
+			}
+			#categoriesDialog .header > .actions {
+				position: absolute;
+				right: 4px;
+				top: 3px;
+				filter: hue-rotate(-30deg);
+			}
+			#categoriesDialog .category:hover {
+				background: #edfafa;
+			}
+			#categoriesDialog .category.deleted, #categoriesDialog .category.deleted:hover {
+				background: #f3dcdc;
+			}
+			#categoriesDialog .category:hover:not(.deleted):not(:has(.category:hover)) > .header {
+				background: #d4eaea;
+			}
+			#newCategoryDialog {
+				min-width: 410px;
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -54%);
+			}
+			#newCategoryDialog > .text {
+				margin-bottom: 23px;
+			}
+			#newCategoryDialog > div > label {
+				display: inline-block;
+				width: 23%;
+				max-width: 100px;
+				/* margin-right: 10px; */
+			}
+			#newCategoryDialog > .line {
+				display: flex;
+				gap: 8px;
+				flex-wrap: nowrap;
+				align-items: center;
+				margin: 6px 0 10px;
+			}
+			#newCategoryDialog > .line > .form-control {
+				margin: 0;
+				flex: 1 0 calc(77% - 10px);
+			}
+			/* #newCategoryDialog > .line > .form-control {
+				display: inline-block;
+				max-width: calc(77% - 10px);
+			} */
+			#newCategoryDialog .buttons {
+				margin-top: 25px;
+			}
+			#newCategoryDialog .buttons > * {
+				width: 80px;
 			}
 			
 			.xscroll_thumb_horz, .xscroll_thumb_vert {
@@ -865,14 +967,15 @@
 					let container = document.querySelector('#commentsDialog .list')
 					if (container.configured) container = container.children[0]
 					container.addEventListener('click', function(event) {
+						let comment = event.target.closest('.comment')
 						if (event.target.classList.contains('edit')) {
-							editComment(event.target.parentNode.parentNode)
+							editComment(comment)
 						} else if (event.target.classList.contains('delete')) {
-							deleteComment(event.target.parentNode.parentNode)
+							deleteComment(comment)
 						} else if (event.target.classList.contains('restore')) {
-							restoreComment(event.target.parentNode.parentNode)
+							restoreComment(comment)
 						} else if (event.target.dataset.action == 'cancel-edit') {
-							cancelEdit(event.target.parentNode)
+							cancelEdit(comment)
 						}
 					});
 				}
@@ -1051,6 +1154,237 @@
 				var comments_offset = 0
 				var comments_count = 10
 				
+				
+				document.querySelectorAll('[data-action="show-categories"]').forEach(el => {
+					el.addEventListener('click', function(event) {
+						openCategories();
+					});
+				});
+				
+				document.querySelectorAll('#categoriesDialog .btn-create').forEach(el => {
+					el.addEventListener('click', openNewCategoryDialog);
+				});
+				
+				function initCategoriesEditor() {
+					let container = document.querySelector('#categoriesDialog .list')
+					if (container.configured) container = container.children[0]
+					container.addEventListener('click', function(event) {
+						let category = event.target.closest('.category')
+						if (event.target.classList.contains('edit')) {
+							editCategory(category)
+						} else if (event.target.classList.contains('delete')) {
+							deleteCategory(category)
+						} else if (event.target.classList.contains('restore')) {
+							restoreCategory(category)
+						} else if (event.target.dataset.action == 'cancel-edit') {
+							cancelEdit(category)
+						} else if (event.target.dataset.action == 'create-child-category') {
+							let category = event.target.closest('.category')
+							let select = document.querySelector('#newCategoryDialog select')
+							select.value = category ? Array.prototype.find.call(select.children, el => {
+								return el.value.match(new RegExp('(\\[|,\\s*)' + category.dataset.id + '\\]$'))
+							}).value : '[]'
+							openNewCategoryDialog()
+						}
+					});
+				}
+				
+				function openCategories() {
+					document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
+					document.getElementById('categoriesDialog').style.display = 'block'
+					
+					document.getElementById('modals').style.visibility = 'visible'
+					setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
+				}
+				
+				function openNewCategoryDialog() {
+					document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
+					document.getElementById('categoriesDialog').style.display = 'block'
+					document.getElementById('newCategoryDialog').style.display = 'block'
+					document.querySelector('#newCategoryDialog .btn-yes').onclick = function() {
+						createCategory()
+						
+						this.closest('.dialog').style.display = 'none'
+						document.querySelector('#newCategoryDialog input').value = ''
+						document.querySelector('#newCategoryDialog select').value = '[]'
+					}
+					if (document.getElementById('modals').style.visibility != 'visible') { 
+						document.getElementById('modals').style.visibility = 'visible'
+						setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
+					}
+					setTimeout(() => document.querySelector('#newCategoryDialog input').focus(), 0)
+				}
+				
+				function filterCategoryName(value) {
+					return value.replace(/[<>^{}@#\r\n]/g, '')
+				}
+				
+				function createCategory() {
+					let name = filterCategoryName(document.querySelector('#newCategoryDialog input').value)
+					if (name.match(/^\s*$/)) return
+					let parent = []
+					try {
+						parent = JSON.parse(document.querySelector('#newCategoryDialog select').value)
+					} catch (ex) {}
+					
+					fetch('/createCategory', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({ type: window.contentType, name: name, parent: parent })
+					})
+					.then(res => {
+						if (res.status >= 400) throw {};
+						return res.json()
+					})
+					.then((res) => {
+						if (res && res.id && res.name) {
+							cache.categories[contentType].push(res)
+							sessionStorage.cache = JSON.stringify(cache)
+						}
+						
+						// Update from backend in case someone else is making edits
+						refreshCategories()
+					})
+				}
+				
+				function editCategory(category) {
+					if (category.isEditing) {
+						let textBlock = category.querySelector('.name')
+						let textarea = category.querySelector('textarea')
+						//let link = textarea ? textarea.nextElementSibling : null
+						if (textarea) {
+							let content = filterCategoryName(textarea.value)
+							let oldValue = textarea.oldValue ?? content
+							cancelEdit(category)
+							textBlock.innerHTML = content
+							
+							fetch('/renameCategory?id=' + category.dataset.id, {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify({ name : content })
+							})
+							.then(res => {
+								if (res.status >= 400) throw {};
+								return res.json()
+							})
+							.then(() => {
+								// Update from backend in case someone else is making edits
+								refreshCategories()
+							})
+							.catch(() => {
+								textBlock.textContent = filterCategoryName(oldValue)
+							})
+							
+							let cachedCategory = cache.categories[contentType].find((cat) => cat.id == category.dataset.id)
+							if (cachedCategory) cachedCategory.name = textBlock.textContent
+							sessionStorage.cache = JSON.stringify(cache)
+						}
+						return
+					}
+					let textarea = document.createElement('textarea')
+					let textBlock = category.querySelector('.name')
+					textarea.style.width = 'calc(100% - 80px)'
+					textarea.style.marginRight = '-42px'
+					textarea.style.marginBottom = '-12px'
+					textarea.style.height = textBlock.clientHeight + 5 + 'px'
+					textarea.style.padding = '2px 4px 3px 4px'
+					textarea.style.position = 'relative'
+					textarea.style.left = '-5px'
+					textarea.style.top = '-3px'
+					textarea.value = textBlock.textContent.replace('<br>', '')
+					textarea.oldValue = textarea.value
+					textBlock.style.display = 'none'
+					if (textBlock.nextElementSibling) {
+						textBlock.parentNode.insertBefore(textarea, textBlock.nextElementSibling)
+					} else {
+						textBlock.parentNode.appendChild(textarea)
+					}
+					
+					textarea.addEventListener('input', function() {
+						this.value = filterCategoryName(this.value)
+					})
+					
+					textarea.addEventListener('keydown', function(event) {
+						if (event.key == 'Enter') editCategory(this.closest('.category'))
+						else if (event.key == 'Escape') cancelEdit(this.closest('.category'))
+					})
+					
+					textarea.addEventListener('blur', function(event) {
+						if (!event.relatedTarget || !event.relatedTarget.classList.contains('edit')) {
+							setTimeout(() => {
+								cancelEdit(this.closest('.category'))
+							}, 50)
+						}
+					})
+					
+					textarea.focus()
+					category.isEditing = true
+				}
+				
+				function cancelEdit(category) {
+					if (!category || !category.isEditing) return
+					let textBlock = category.querySelector('.name')
+					let textarea = category.querySelector('textarea')
+					//let link = textarea ? textarea.nextElementSibling : null
+					if (textarea) {
+						textBlock.innerHTML = textarea.oldValue.replace(/[<>^{}@#\r\n]/g, '')
+						textBlock.parentNode.removeChild(textarea)
+						//textBlock.parentNode.removeChild(link)
+						textBlock.style.display = ''
+						category.isEditing = false
+					}
+				}
+				
+				function deleteCategory(category) {
+					let soft = !category.classList.contains('deleted')
+					fetch('/deleteCategory?ids=[' + category.dataset.id + ']' + (soft ? '&soft' : ''))
+					.then(res => {
+						if (res.status >= 400) throw {};
+						return res.json()
+					})
+					.then(() => {
+						// Update from backend in case someone else is making edits
+						refreshCategories()
+					})
+					.catch(() => {
+						category.classList.remove('deleted')
+					})
+					let cachedCategory = cache.categories[contentType].find((cat) => cat.id == category.dataset.id)
+					if (soft) {
+						category.classList.add('deleted')
+						if (cachedCategory) cachedCategory.isDeleted = true
+					} else {
+						category.parentNode.removeChild(category)
+						if (cachedCategory) cache.categories[contentType].splice(cache.categories[contentType].indexOf(cachedCategory), 1)
+					}
+					sessionStorage.cache = JSON.stringify(cache)
+				}
+				
+				function restoreCategory(category) {
+					fetch('/restoreCategory?ids=[' + category.dataset.id + ']')
+					.then(res => {
+						if (res.status >= 400) throw {};
+						return res.json()
+					})
+					.then(() => {
+						// Update from backend in case someone else is making edits
+						refreshCategories()
+					})
+					.catch(() => {
+						category.classList.add('deleted')
+					})
+					category.classList.remove('deleted')
+					
+					let cachedCategory = cache.categories[contentType].find((cat) => cat.id == category.dataset.id)
+					if (cachedCategory) cachedCategory.isDeleted = false
+					sessionStorage.cache = JSON.stringify(cache)
+				}
+
+				
 				document.querySelectorAll('[data-action^="check-"]').forEach(el => {
 					el.addEventListener('click', function(event) {
 						let checkboxes = document.querySelectorAll('.list .line input[type="checkbox"]')
@@ -1119,7 +1453,13 @@
 				});
 				
 				document.querySelectorAll('#modals .btn-no').forEach(btn => {
-					btn.onclick = hideModals
+					btn.onclick = function(event) {
+						if (this.closest('.dialog').dataset.type == 'secondary') {
+							this.closest('.dialog').style.display = 'none'
+							return
+						}
+						hideModals()
+					}
 				});
 				
 				document.getElementById('subheader-content').addEventListener('click', function(event) {
@@ -1206,6 +1546,8 @@
 				
 				await buildForm(window.contentType);
 				await loadCategories(window.contentType);
+				
+				initCategoriesEditor()
 				
 				if (localStorage.category !== undefined) {
 					let catlist = document.querySelector('.category-filter');
@@ -1576,6 +1918,12 @@
 					});
 			}
 			
+			function refreshCategories() {
+				delete cache.categories[contentType]
+				sessionStorage.cache = JSON.stringify(cache)
+				loadCategories(contentType)
+			}
+			
 			function setCategories(categories) {
 				let els = document.querySelectorAll('.category-filter, [name="categories"]')
 				els.forEach(function(list) {
@@ -1592,12 +1940,61 @@
 						list.value = '';
 					}
 					for (let category of categories) {
+						if (category.isDeleted) continue
 						let fullCategoryName = category.path.join(' > ');
-						let value = list.classList.contains('category-filter') ? category.id : JSON.stringify(category.id_path)
-						let option = new Option(fullCategoryName, value)
+						let value = list.classList.contains('category-filter') ? category.id : JSON.stringify(category.id_path);
+						let option = new Option(fullCategoryName, value);
 						list.appendChild(option);
 					}
 				});
+				updateEditorCategories(categories)
+			}
+			
+			function updateEditorCategories(categories) {
+				let container = document.querySelector('#categoriesDialog .list')
+				if (container.configured) container = container.children[0]
+				container.innerHTML = ''
+				let data = [], map = {}
+				for (let i = 0; i < categories.length; i++) {
+					let id_path = categories[i].id_path
+					if (!id_path.length) continue
+					let id = id_path[id_path.length-1]
+					let name = categories[i].name
+					let parent_id = id_path.length > 1 ? id_path[id_path.length-2] : null
+					if (!map[id]) {
+						map[id] = { id: id, name: name, path: JSON.stringify(id_path), id_path: id_path, children: [], deleted: categories[i].isDeleted }
+						if (!parent_id) data.push(map[id])
+						else map[parent_id].children.push(map[id])
+					}
+				}
+				
+				//console.log(data)
+				
+				addCategoryList(container, data)
+				
+				function addCategoryList(container, data) {
+					for (let category of data) {
+						let block = document.createElement('div')
+						block.className = 'category empty'
+						if (category.deleted) {
+							block.classList.add('deleted')
+						}
+						block.innerHTML += '<div class="header"><div class="name">' + category.name + '</div></div>'
+						block.children[0].innerHTML += '<div class="actions"><div class="btn edit"></div><div class="btn delete"></div><div class="btn restore"></div></div>'
+						block.dataset.id = category.id
+						container.appendChild(block)
+						
+						if (category.children && category.children instanceof Array) {
+							let childrenBlock = document.createElement('div')
+							childrenBlock.className = 'list children'
+							block.appendChild(childrenBlock)
+							addCategoryList(childrenBlock, category.children)
+							if (category.children.length) block.classList.remove('empty')
+						}
+						
+						block.innerHTML += '<button class="btn add-child" data-action="create-child-category"></button>'
+					}
+				}
 			}
 			
 			function loadItemData(type, id, children = 1) {
@@ -1770,7 +2167,7 @@
 				document.querySelector('#confirmDialog .btn-yes').onclick = handler
 				document.getElementById('modals').style.visibility = 'visible'
 				setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
-			}
+			}		
 			
 			function openSetCategoryDialog() {
 				document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
@@ -2002,6 +2399,9 @@
 			</div>
 		</div>
 		<div id="subheader">
+			<div id="categories-toggle-wrap">
+				<span class="link" data-action="show-categories">Categories</span>
+			</div>
 			<div id="subheader-content">
 				<div class="realms">
 					<span class="link active" data-value="blog">Blog</span>
@@ -2102,6 +2502,16 @@
 			<div class="dialog" id="commentsDialog">
 				<div class="list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="200"></div>
 				<div class="buttons"><div class="btn btn-primary btn-no">Close</div></div>
+			</div>
+			<div class="dialog" id="categoriesDialog">
+				<div class="list scrollable scroll_y" button-size="1" scroll-delta="20" thumb-width="6" thumb-length="200"></div>
+				<div class="buttons"><div class="btn btn-primary btn-create">New</div><div class="btn btn-primary btn-no">Close</div></div>
+			</div>
+			<div class="dialog" id="newCategoryDialog" data-type="secondary">
+				<div class="text">Create new category:</div>
+				<div class="line"><label for="new-category-parent">Parent</label><select data-role="set-category" name="categories" class="form-control" id="new-category-parent"><option value="[]">None</option></select></div>
+				<div class="line"><label for="new-category-title">Title</label><input type="text" name="category-name" class="form-control" id="new-category-title"></div>
+				<div class="buttons"><div class="btn btn-primary btn-yes">Create</div><div class="btn btn-primary btn-no">Cancel</div></div>
 			</div>
 		</div>
 	</body>

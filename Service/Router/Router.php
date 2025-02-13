@@ -227,6 +227,30 @@ class Router
             }
             return editComment($request);
         }
+        if ($request->getPathInfo() == '/createCategory') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            return createCategory($request);
+        }
+        if ($request->getPathInfo() == '/renameCategory') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            return renameCategory($request);
+        }
+        if ($request->getPathInfo() == '/deleteCategory') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            return deleteCategories($request);
+        }
+        if ($request->getPathInfo() == '/restoreCategory') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            return restoreCategories($request);
+        }
         if ($request->getPathInfo() == '/upload' && $request->getMethod() == 'POST') {
             return uploadFile($request);
         }

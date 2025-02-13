@@ -402,6 +402,139 @@ function restoreEntities(Request $request): Response
     }
 }
 
+function filterCategoryName(string $value): string
+{
+    return preg_replace("/[<>^{}@#\\r\\n]/", '', $value);
+}
+
+function createCategory(Request $request): Response
+{
+    try {
+        global $dbal;
+
+        $data = null;
+        if (preg_match("/^\\{.*\\}$/", $request->getContent())) {
+            $data = json_decode($request->getContent());
+        }
+        $type = $data ? $data->type : $request->get('type');
+        $name = $data ? $data->name : $request->get('name');
+        $parent = $data ? $data->parent : $request->get('parent');
+
+        if (is_array($parent)) {
+            $parent = end($parent) ?? 0;
+        }
+
+        $name = filterCategoryName($name);
+
+        $category = new Category();
+        $category->type = $type;
+        $category->name = $name;
+        $category->isActive = true;
+        $category->save();
+        $category->setParent($parent);
+        $category->save();
+
+        $fields = array_keys(AbstractEntity::getSchema('category'));
+
+        return new JsonResponse($category->getFields($fields), 200);
+    } catch (Exception $e) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    }
+}
+
+function renameCategory(Request $request): Response
+{
+    try {
+        global $dbal;
+
+        $name = $request->get('name') ?? json_decode($request->getContent())->name;
+
+        $category = Category::load($request->get('id'));
+        $category->name = $name;
+        $category->save();
+
+        return new JsonResponse(['result' => 'ok'], 200);
+    } catch (Exception $e) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    }
+}
+
+function clearCategories(array $categoryIds, ?bool $soft = false)
+{
+    $requests = [];
+    foreach ($categoryIds as $categoryId) {
+        $requests[] = ['type' => Category::load($categoryId)->type];
+    }
+
+    foreach ($requests as $request) {
+        $className = getFullClassNameByType($request['type']);
+        $repository = new Repository($className);
+        $ids = array_map(fn($item) => $item['id'], $repository->filterByCategory($categoryId)->sortBy(['id' => 'asc'])->select('id'));
+        if (!empty($ids)) {
+            if ($soft) {
+                $repository->where(['`id` IN (' . implode(',', $ids) . ')'])->update(['is_deleted' => true]);
+            } else {
+                $repository->where(['`id` IN (' . implode(',', $ids) . ')'])->delete();
+            }
+        }
+    }
+}
+
+function restoreCategoryItems(array $categoryIds)
+{
+    $requests = [];
+    foreach ($categoryIds as $categoryId) {
+        $requests[] = ['type' => Category::load($categoryId)->type];
+    }
+
+    foreach ($requests as $request) {
+        $className = getFullClassNameByType($request['type']);
+        $repository = new Repository($className);
+        $ids = array_map(fn($item) => $item['id'], $repository->filterByCategory($categoryId)->sortBy(['id' => 'asc'])->select('id'));
+        if (!empty($ids)) {
+            $repository->where(['`id` IN (' . implode(',', $ids) . ')'])->update(['is_deleted' => false]);
+        }
+    }
+}
+
+function deleteCategories(Request $request): Response
+{
+    try {
+        $softDelete = $request->get('soft') !== null || (isset($TPF_CONFIG['use_soft_delete']) && $TPF_CONFIG['use_soft_delete']);
+
+        global $dbal;
+
+        $ids = json_decode($request->get('ids'), true);
+        clearCategories($ids, $softDelete);
+
+        if (!$softDelete) {
+            $dbal->exec('DELETE FROM `category` WHERE `id` IN ('. implode(',', $ids) .')');
+            $dbal->exec('ALTER TABLE `category` AUTO_INCREMENT=0');
+        } else {
+            $dbal->exec('UPDATE `category` SET `is_deleted`=1 WHERE `id` IN ('. implode(',', $ids) .')');
+        }
+
+        return new JsonResponse(['result' => 'ok'], 200);
+    } catch (Exception $e) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    }
+}
+
+function restoreCategories(Request $request): Response
+{
+    try {
+        global $dbal;
+
+        $ids = json_decode($request->get('ids'), true);
+        restoreCategoryItems($ids);
+        $dbal->exec('UPDATE `category` SET `is_deleted`=0 WHERE `id` IN ('. implode(',', $ids) .')');
+
+        return new JsonResponse(['result' => 'ok'], 200);
+    } catch (Exception $e) {
+        return new JsonResponse(['error' => 'Bad request', 'exception' => $e->getMessage()], 400);
+    }
+}
+
 function search(Request $request, Repository $repository)
 {
     if (!preg_match("/^[@#]/", $request->get('search'))) {
