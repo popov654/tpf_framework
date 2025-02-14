@@ -150,10 +150,10 @@ abstract class AbstractEntity
             } else if (preg_match("/^time/", $col['Type'])) {
                 $type = 'time';
             }
-            if ($type == 'text' && preg_match("/(^|_)(photo|image|picture)(_|$)/", $col['Field'])) {
+            if ($type == 'text' && preg_match("/(^|_)(photo|image|picture|avatar)(_|$)/", $col['Field'])) {
                 $type = 'image';
             }
-            if (($type == 'text' || $type == 'array') && preg_match("/(^|_)(photos|images|pictures)(_|$)/", $col['Field'])) {
+            if (($type == 'text' || $type == 'array') && preg_match("/(^|_)(photos|images|pictures|avatars)(_|$)/", $col['Field'])) {
                 $type = 'image_list';
             }
             if ($col['Field'] == 'name' || $col['Field'] == 'title' || $table == 'user' && $col['Field'] == 'username') {
