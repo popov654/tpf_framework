@@ -136,19 +136,9 @@ function getEntitySchema(Request $request): Response
     return new JsonResponse(['schema' => $schema, 'associations' => $assoc], 200);
 }
 
-function getEntities(Request $request): Response
+function applyRequestParameters(Request $request, Repository $repository)
 {
-    global $dbal;
-
-    $type = getEntityType($request->get('type'));
-    if (!$type) {
-        return new JsonResponse(['error' => 'Unknown type'], 400);
-    }
-
-    $className = getFullClassNameByType($type);
-
-    $repository = new Repository($className);
-    if ($type != 'user' && $type != 'session') {
+    if ($request->get('type') != 'user' && $request->get('type') != 'session') {
         $repository->whereEq(['is_deleted' => $request->get('trash') !== null || $request->get('category') == 'trash']);
     }
     if ($request->get('category') !== null && $request->get('category') != 'trash') {
@@ -166,6 +156,85 @@ function getEntities(Request $request): Response
     if ((int) $request->get('offset') < 0) {
         $request->query->set('offset', 0);
     }
+}
+
+function exportEntities(Request $request): Response
+{
+    global $dbal;
+
+    $type = getEntityType($request->get('type'));
+    if (!$type) {
+        return new JsonResponse(['error' => 'Unknown type'], 400);
+    }
+
+    $className = getFullClassNameByType($type);
+
+    $repository = new Repository($className);
+
+    applyRequestParameters($request, $repository);
+
+    $repository->sortBy(['id' => 'asc']);
+
+    if ($request->get('ids')) {
+        $ids = explode(',', $request->get('ids'));
+        $repository->andWhere(['`id` IN (' . implode(',', array_map(function($el) { return (int) $el; }, $ids)) . ')'])->fetch();
+    }
+
+    try {
+        $entities = $repository->fetch();
+
+        $comments = [];
+
+        $categoriesIds = [];
+
+        $result = [];
+        foreach ($entities as $entity) {
+            $result[] = $entity->getFields();
+            if (in_array('categories', get_object_vars($entity))) {
+                $categoriesIds = array_merge($categoriesIds, $entity->categories);
+                $comments = array_merge($comments, $entity->getComments());
+            }
+        }
+
+        $categories = [];
+
+        if (!empty($categoriesIds)) {
+            $categoriesIds = array_unique($categoriesIds);
+            $categories = (new Repository(Category::class))->where(['`id` IN (' . implode(',', $categoriesIds) . ')'])->fetch();
+
+            $categories = array_map(function ($category) {
+                return $category->getFields();
+            }, $categories);
+        }
+
+        $comments = array_map(function($comment) {
+            return $comment->getFields();
+        }, $comments);
+
+        $response = new JsonResponse();
+        $response->headers->set('Content-Disposition', 'attachment; filename=' . $type . '_' . date("Y-m-d_H-i-s") . '.json');
+        $response->setData(['data' => [$type => $result], 'categories' => $categories, 'comments' => $comments]);
+
+        return $response;
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => $t->getMessage()], 400);
+    }
+}
+
+function getEntities(Request $request): Response
+{
+    global $dbal;
+
+    $type = getEntityType($request->get('type'));
+    if (!$type) {
+        return new JsonResponse(['error' => 'Unknown type'], 400);
+    }
+
+    $className = getFullClassNameByType($type);
+
+    $repository = new Repository($className);
+
+    applyRequestParameters($request, $repository);
 
     try {
         $total = $repository->count();

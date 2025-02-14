@@ -203,7 +203,7 @@ class Router
             return getCategoriesByType($request);
         }
         if ($request->getPathInfo() == '/getEntities' || $request->getPathInfo() == '/getItems') {
-            return getEntities($request);
+            return $request->get('export') !== null ? exportEntities($request) : getEntities($request);
         }
         if ($request->getPathInfo() == '/saveEntity' || $request->getPathInfo() == '/saveItem') {
             if (!$canEdit) {

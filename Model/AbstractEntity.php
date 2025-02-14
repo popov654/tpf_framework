@@ -206,7 +206,7 @@ abstract class AbstractEntity
                 $type = $parts[$i] . '_' . $type;
             }
             $repository = new Repository(Comment::class);
-            $result = $repository->whereEq(['type' => $type, 'entity_id' => $this->id])->fetch();
+            $result = $repository->whereEq(['type' => $type, 'entity_id' => $this->id])->sortBy(['id' => 'asc'])->fetch();
         }
 
         return $result;
