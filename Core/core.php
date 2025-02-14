@@ -204,7 +204,23 @@ function transformKeys(array $data, array $keys): array
     return $result;
 }
 
-function getRealmEntityNames($realm = '*'): array
+function array_filter_keys(array $array, array $keys): array
+{
+    return array_intersect_key($array, array_flip($keys));
+}
+
+function array_filter_values(callable $callable, array $array): array
+{
+    return array_values(array_filter($array, $callable));
+}
+
+function array_find(callable $callable, array $array): mixed
+{
+    $res = array_filter_values($callable, $array);
+    return !empty($res) ? $res[0] : null;
+}
+
+function getRealmEntityNames(string $realm = '*'): array
 {
     global $TPF_CONFIG;
     $result = [];

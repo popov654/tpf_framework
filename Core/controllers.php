@@ -13,6 +13,7 @@ use Tpf\Model\User;
 use Tpf\Model\Category;
 use Tpf\Service\Auth\LoginService;
 use Tpf\Service\Image\ImageResizer;
+use Tpf\Service\ImportExport;
 use Tpf\Service\UsersService;
 use Tpf\Service\ErrorPage;
 
@@ -160,7 +161,9 @@ function applyRequestParameters(Request $request, Repository $repository)
 
 function exportEntities(Request $request): Response
 {
-    global $dbal;
+    if (!$request->get('type')) {
+        return exportAllData($request);
+    }
 
     $type = getEntityType($request->get('type'));
     if (!$type) {
@@ -182,38 +185,11 @@ function exportEntities(Request $request): Response
 
     try {
         $entities = $repository->fetch();
-
-        $comments = [];
-
-        $categoriesIds = [];
-
-        $result = [];
-        foreach ($entities as $entity) {
-            $result[] = $entity->getFields();
-            if (in_array('categories', get_object_vars($entity))) {
-                $categoriesIds = array_merge($categoriesIds, $entity->categories);
-                $comments = array_merge($comments, $entity->getComments());
-            }
-        }
-
-        $categories = [];
-
-        if (!empty($categoriesIds)) {
-            $categoriesIds = array_unique($categoriesIds);
-            $categories = (new Repository(Category::class))->where(['`id` IN (' . implode(',', $categoriesIds) . ')'])->fetch();
-
-            $categories = array_map(function ($category) {
-                return $category->getFields();
-            }, $categories);
-        }
-
-        $comments = array_map(function($comment) {
-            return $comment->getFields();
-        }, $comments);
+        $data = ImportExport::exportEntities($type, $entities);
 
         $response = new JsonResponse();
         $response->headers->set('Content-Disposition', 'attachment; filename=' . $type . '_' . date("Y-m-d_H-i-s") . '.json');
-        $response->setData(['data' => [$type => $result], 'categories' => $categories, 'comments' => $comments]);
+        $response->setData($data);
 
         return $response;
     } catch (Throwable $t) {
@@ -221,10 +197,16 @@ function exportEntities(Request $request): Response
     }
 }
 
+function importEntities(Request $request): Response
+{
+    $data = json_decode($request->getContent(), true);
+    $importedEntities = ImportExport::importData($data);
+
+    return new JsonResponse(['result' => 'ok', 'imported_items' => $importedEntities]);
+}
+
 function getEntities(Request $request): Response
 {
-    global $dbal;
-
     $type = getEntityType($request->get('type'));
     if (!$type) {
         return new JsonResponse(['error' => 'Unknown type'], 400);
@@ -261,8 +243,6 @@ function getEntity(Request $request): Response
     if (!$request->get('id')) {
         return new JsonResponse(['error' => 'Bad request'], 400);
     }
-
-    global $dbal;
 
     $type = getEntityType($request->get('type'));
     if (!$type) {
