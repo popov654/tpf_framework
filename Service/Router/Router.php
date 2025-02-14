@@ -70,7 +70,7 @@ class Router
             }
         }
 
-        preg_match('|(/[\w\d~_-]+){1,4}|', $request->getPathInfo(), $matches);
+        preg_match('|(/[\w\d.~_-]+){1,4}|', $request->getPathInfo(), $matches);
         if ($matches[0]) {
             $parts = explode("/", substr($matches[0], 1));
             if (isset($TPF_CONFIG['realms']) && array_key_exists($parts[0], $TPF_CONFIG['realms'])) {
@@ -274,7 +274,7 @@ class Router
 
     private static function processSystemAssets(Request $request)
     {
-        if (preg_match("/\/tpf\/([^\/]+\/)*(css|js|icons)\/([^\/]+\/)*((?:[a-z0-9_-]+\.)+)(\\2(?:\.map)?|gif|png|jpg|webp|svg)$/i", $request->getPathInfo(), $matches)) {
+        if (preg_match("/\/tpf\/([^\/]+(?<!css|js|icons)\/)*(?:(css|js|icons)\/)?([^\/]+\/)*((?:[a-z0-9_-]+\.)+)((?:\\2|css|js)(?:\.map)?|gif|png|jpg|webp|svg)$/i", $request->getPathInfo(), $matches)) {
             $path = PATH . '/vendor/' . VENDOR_PATH . '/assets/' . ($matches[1] ?? '') . $matches[2] . '/' . ($matches[3] ?? '') . $matches[4] . $matches[5];
             if (file_exists($path)) {
                 $types = ['css' => 'text/css', 'js' => 'text/javascript', 'ttf' => 'font/ttf', 'woff' => 'font/woff', 'eot' => 'font/eot', 'html' => 'text/html', 'svg' => 'image/svg+xml', 'gif' => 'image/gif', 'jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'];
