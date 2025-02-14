@@ -205,6 +205,7 @@ abstract class AbstractEntity
                 if ($parts[$i] == 'Model') break;
                 $type = $parts[$i] . '_' . $type;
             }
+            $type = lcfirst($type);
             $repository = new Repository(Comment::class);
             $result = $repository->whereEq(['type' => $type, 'entity_id' => $this->id])->sortBy(['id' => 'asc'])->fetch();
         }
