@@ -343,7 +343,6 @@ function deleteEntities(Request $request): Response
 
         if (!$softDelete) {
             $repository->where(['`id` IN ('. implode(',', json_decode($request->get('ids'), true)) .')'])->delete();
-            global $dbal;
             $dbal->exec('ALTER TABLE `' . $type . '` AUTO_INCREMENT=0');
         } else {
             $ids = json_decode($request->get('ids'), true);

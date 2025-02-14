@@ -99,7 +99,7 @@ class Query
 
     public static function mb_escape(?string $string)
     {
-        return $string ? preg_replace("/[\\x00\\x0A\\x0D\\x1A\\x22\\x27\\x5C]/u", "\\\$0", $string) : '';
+        return $string ? preg_replace("/[\\x00\\x0A\\x0D\\x1A\\x22\\x27\\x5C]/u", "\\\\0", $string) : '';
     }
 
     /**
