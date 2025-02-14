@@ -42,6 +42,22 @@ class ImportExport
         return ['data' => [$type => $result], 'categories' => $categories, 'comments' => $comments];
     }
 
+    public static function exportAllEntities(): array
+    {
+        $types = getRealmTableNames();
+        $fullData = ['data' => [], 'categories' => [], 'comments' => []];
+        foreach ($types as $type) {
+            $className = getFullClassNameByType($type);
+            $entities = (new Repository($className))->sortBy(['id' => 'asc'])->fetch();
+            $partialData = self::exportEntities($type, $entities);
+            $fullData['data'][$type] = $partialData['data'][$type];
+            $fullData['categories'] = array_merge($fullData['categories'], $partialData['categories']);
+            $fullData['comments'] = array_merge($fullData['comments'], $partialData['comments']);
+        }
+
+        return $fullData;
+    }
+
     public static function importData(array $data): array
     {
         $categoriesRepository = new Repository(Category::class);

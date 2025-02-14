@@ -193,7 +193,21 @@ function exportEntities(Request $request): Response
 
         return $response;
     } catch (Throwable $t) {
-        return new JsonResponse(['error' => $t->getMessage()], 400);
+        return new JsonResponse(['error' => $t->getMessage()], 500);
+    }
+}
+
+function exportAllData(Request $request): Response{
+    try {
+        $data = ImportExport::exportAllEntities();
+
+        $response = new JsonResponse();
+        $response->headers->set('Content-Disposition', 'attachment; filename=all_data_' . date("Y-m-d_H-i-s") . '.json');
+        $response->setData($data);
+
+        return $response;
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => $t->getMessage()], 500);
     }
 }
 
