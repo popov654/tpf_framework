@@ -5,8 +5,10 @@
 		<link rel="stylesheet" href="/tpf/bootstrap/css/bootstrap.min.css" />
 		<link rel="stylesheet" href="/tpf/css/style.css" />
 		<link rel="stylesheet" href="/tpf/css/cropper.min.css" />
+		<link rel="stylesheet" href="/tpf/ckeditor/css/ckeditor5.css" />
 		<script src="/tpf/bootstrap/js/bootstrap.min.js"></script>
 		<script src="/tpf/js/cropper.min.js"></script>
+		<script src="/tpf/ckeditor/js/ckeditor5.umd.js"></script>
 		<style>
 			body {
 				padding: 0;
@@ -1086,6 +1088,7 @@
 			settings.confirmCommentDelete = !!settings.confirmCommentDelete
 			
 			localStorage.settings = JSON.stringify(settings);
+			
 			
 			
 			window.addEventListener('DOMContentLoaded', async function() {
@@ -2202,6 +2205,10 @@
 							}
 						}
 						
+						if (type == 'text' && window.CKEDITOR) {
+							createRichTextEditor(input)
+						}
+						
 						container.appendChild(row);
 					}
 					
@@ -2420,6 +2427,9 @@
 								input.disabled = true
 							}else if (input.type != 'checkbox' && input.name in res) {
 								input.value = res[input.name]
+								if (input.editor && input.editor.setData) {
+									input.editor.setData(input.value)
+								}
 							} else if (input.type == 'checkbox' && input.name in res) {
 								input.checked = !!res[input.name]
 							}
@@ -2831,6 +2841,231 @@
 					},
 					body: 'files=' + encodeURIComponent(JSON.stringify(files))
 				})
+			}
+			
+			function createRichTextEditor(element) {
+				const {
+					ClassicEditor,
+					Autoformat,
+					AutoImage,
+					AutoLink,
+					Autosave,
+					Bold,
+					Code,
+					CodeBlock,
+					Essentials,
+					GeneralHtmlSupport,
+					Heading,
+					HtmlComment,
+					HtmlEmbed,
+					ImageBlock,
+					ImageCaption,
+					ImageInline,
+					ImageInsert,
+					ImageInsertViaUrl,
+					ImageResize,
+					ImageStyle,
+					ImageTextAlternative,
+					ImageToolbar,
+					ImageUpload,
+					Italic,
+					Link,
+					LinkImage,
+					List,
+					ListProperties,
+					Paragraph,
+					PasteFromOffice,
+					RemoveFormat,
+					ShowBlocks,
+					SimpleUploadAdapter,
+					SourceEditing,
+					Superscript,
+					Table,
+					TableCaption,
+					TableCellProperties,
+					TableColumnResize,
+					TableProperties,
+					TableToolbar,
+					TextTransformation,
+					Underline
+				} = window.CKEDITOR;
+
+				const LICENSE_KEY =
+					'eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3MzY5ODU1OTksImp0aSI6IjJiODM4Y2UwLWQ1NTQtNDZiYy1hOTBlLTNlMThhNmNlMjk5YiIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiLCJzaCJdLCJ3aGl0ZUxhYmVsIjp0cnVlLCJsaWNlbnNlVHlwZSI6InRyaWFsIiwiZmVhdHVyZXMiOlsiKiJdLCJ2YyI6IjNkMjUwNTI0In0.f0nRurP6YWi5FEm98VC611fe3vfBH57Z97W9V2U5euqx7xsOUSm5g7n0OeoAsY6swiXasQKC7URFIH_bKMRlSw';
+
+				const editorConfig = {
+					toolbar: {
+						items: [
+							'sourceEditing',
+							'showBlocks',
+							'|',
+							'heading',
+							'|',
+							'bold',
+							'italic',
+							'underline',
+							'superscript',
+							'code',
+							'removeFormat',
+							'|',
+							'link',
+							'insertImage',
+							'insertTable',
+							'codeBlock',
+							'htmlEmbed',
+							'|',
+							'bulletedList',
+							'numberedList'
+						],
+						shouldNotGroupWhenFull: false
+					},
+					plugins: [
+						Autoformat,
+						AutoImage,
+						AutoLink,
+						Autosave,
+						Bold,
+						Code,
+						CodeBlock,
+						Essentials,
+						GeneralHtmlSupport,
+						Heading,
+						HtmlComment,
+						HtmlEmbed,
+						ImageBlock,
+						ImageCaption,
+						ImageInline,
+						ImageInsert,
+						ImageInsertViaUrl,
+						ImageResize,
+						ImageStyle,
+						ImageTextAlternative,
+						ImageToolbar,
+						ImageUpload,
+						Italic,
+						Link,
+						LinkImage,
+						List,
+						ListProperties,
+						Paragraph,
+						PasteFromOffice,
+						RemoveFormat,
+						ShowBlocks,
+						SimpleUploadAdapter,
+						SourceEditing,
+						Superscript,
+						Table,
+						TableCaption,
+						TableCellProperties,
+						TableColumnResize,
+						TableProperties,
+						TableToolbar,
+						TextTransformation,
+						Underline
+					],
+					heading: {
+						options: [
+							{
+								model: 'paragraph',
+								title: 'Paragraph',
+								class: 'ck-heading_paragraph'
+							},
+							{
+								model: 'heading1',
+								view: 'h1',
+								title: 'Heading 1',
+								class: 'ck-heading_heading1'
+							},
+							{
+								model: 'heading2',
+								view: 'h2',
+								title: 'Heading 2',
+								class: 'ck-heading_heading2'
+							},
+							{
+								model: 'heading3',
+								view: 'h3',
+								title: 'Heading 3',
+								class: 'ck-heading_heading3'
+							},
+							{
+								model: 'heading4',
+								view: 'h4',
+								title: 'Heading 4',
+								class: 'ck-heading_heading4'
+							},
+							{
+								model: 'heading5',
+								view: 'h5',
+								title: 'Heading 5',
+								class: 'ck-heading_heading5'
+							},
+							{
+								model: 'heading6',
+								view: 'h6',
+								title: 'Heading 6',
+								class: 'ck-heading_heading6'
+							}
+						]
+					},
+					htmlSupport: {
+						allow: [
+							{
+								name: /^.*$/,
+								styles: true,
+								attributes: true,
+								classes: true
+							}
+						]
+					},
+					image: {
+						toolbar: [
+							'toggleImageCaption',
+							'imageTextAlternative',
+							'|',
+							'imageStyle:inline',
+							'imageStyle:wrapText',
+							'imageStyle:breakText',
+							'|',
+							'resizeImage'
+						]
+					},
+					initialData: '',
+					licenseKey: 'GPL',
+					link: {
+						addTargetToExternalLinks: true,
+						defaultProtocol: 'https://',
+						decorators: {
+							toggleDownloadable: {
+								mode: 'manual',
+								label: 'Downloadable',
+								attributes: {
+									download: 'file'
+								}
+							}
+						}
+					},
+					list: {
+						properties: {
+							styles: true,
+							startIndex: true,
+							reversed: true
+						}
+					},
+					placeholder: 'Type or paste your content here!',
+					table: {
+						contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties']
+					}
+				};
+				
+				ClassicEditor.create(element, editorConfig).then(editor => {
+					element.editor = editor
+					document.querySelector('.ck-content').addEventListener('DOMSubtreeModified', debounce(function() {
+						if (element && element.editor) {
+							element.value = element.editor.getData()
+						}
+					}, 1000));
+				});
 			}
 			
 			function formatDate(e, n) {
