@@ -1,5 +1,6 @@
 <?php
 
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -213,10 +214,15 @@ function exportAllData(Request $request): Response{
 
 function importEntities(Request $request): Response
 {
-    $data = json_decode($request->getContent(), true);
-    $importedEntities = ImportExport::importData($data);
-
-    return new JsonResponse(['result' => 'ok', 'imported_items' => $importedEntities]);
+    try {
+        $content = $request->files->get('file') ? $request->files->get('file')->getContent() : $request->getContent();
+        $data = json_decode($content, true);
+        if (!$data) throw new \Exception('The data is not a valid JSON');
+        $importedEntities = ImportExport::importData($data, $request->get('type'));
+        return new JsonResponse(['result' => 'ok', 'imported_items' => $importedEntities]);
+    } catch (Throwable $t) {
+        return new JsonResponse(['error' => $t->getMessage()], 500);
+    }
 }
 
 function getEntities(Request $request): Response

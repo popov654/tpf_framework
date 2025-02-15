@@ -211,6 +211,12 @@ class Router
             }
             return saveEntity($request);
         }
+        if ($request->getPathInfo() == '/importEntities' || $request->getPathInfo() == '/importItems') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            return importEntities($request);
+        }
         if ($request->getPathInfo() == '/setEntityCategory' || $request->getPathInfo() == '/setItemCategory' || $request->getPathInfo() == '/setCategory') {
             if (!$canEdit) {
                 return new Response('Access denied', 403);

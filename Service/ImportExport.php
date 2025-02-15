@@ -58,7 +58,7 @@ class ImportExport
         return $fullData;
     }
 
-    public static function importData(array $data): array
+    public static function importData(array $data, ?string $exactType = null): array
     {
         $categoriesRepository = new Repository(Category::class);
 
@@ -69,6 +69,7 @@ class ImportExport
         if (isset($data['categories'])) {
             $categoriesRepository = new Repository(Category::class);
             foreach ($data['categories'] as $categoryData) {
+                if ($exactType && $categoryData['type'] != $exactType) continue;
                 if ($categoriesRepository->where(['CAST(`path` as CHAR) = \'["' . implode('", "', $categoryData['path']) . '"]\''])->count() > 0) {
                     continue;
                 }
@@ -81,6 +82,7 @@ class ImportExport
         }
         if (isset($data['data'])) {
             foreach ($data['data'] as $type => $entities) {
+                if ($exactType && $type != $exactType) continue;
                 $className = getFullClassNameByType($type);
                 $repository = new Repository($className);
                 foreach ($entities as $entityData) {
@@ -125,6 +127,7 @@ class ImportExport
         if (isset($data['comments'])) {
             $commentsRepository = new Repository(Comment::class);
             foreach ($data['comments'] as $commentData) {
+                if ($exactType && $commentData['type'] != $exactType) continue;
                 if (!isset($map[$commentData['type'][$commentData['entityId']]])) continue;
                 $commentData['entityId'] = $map[$commentData['type'][$commentData['entityId']]] ?? $commentData['entityId'];
                 $comment = new Comment();

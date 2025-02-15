@@ -6,9 +6,11 @@
 		<link rel="stylesheet" href="/tpf/css/style.css" />
 		<link rel="stylesheet" href="/tpf/css/cropper.min.css" />
 		<link rel="stylesheet" href="/tpf/ckeditor/css/ckeditor5.css" />
+		<link rel="stylesheet" href="/tpf/dropzone/css/dropzone.min.css" />
 		<script src="/tpf/bootstrap/js/bootstrap.min.js"></script>
 		<script src="/tpf/js/cropper.min.js"></script>
 		<script src="/tpf/ckeditor/js/ckeditor5.umd.js"></script>
+		<script src="/tpf/dropzone/js/dropzone.min.js"></script>
 		<style>
 			body {
 				padding: 0;
@@ -753,7 +755,8 @@
 				overflow: hidden;
 				text-overflow: ellipsis;
 			}
-			#changeCategoryDialog .buttons > * {
+			#changeCategoryDialog .buttons > *,
+			#exportDialog .buttons > *, #importDialog .buttons > * {
 				width: 92px;
 			}
 			#commentsDialog .list {
@@ -1054,6 +1057,28 @@
 			}
 			#cropPhotoDialog .buttons > * {
 				width: 80px;
+			}
+			
+			#importDialog .error {
+				font-size: 13px;
+				color: #a00;
+				display: block;
+				text-align: center;
+			}
+			#select-import-file {
+				width: 240px;
+				margin-top: 6px;
+				border: 1px solid #c3c3c3;
+				border-radius: 3px;
+				padding: 12px;
+				text-align: center;
+				cursor: pointer;
+			}
+			#select-import-file:hover {
+				color: #555;
+			}
+			#importDialog .buttons > * {
+				width: 84px;
 			}
 			
 			.xscroll_thumb_horz, .xscroll_thumb_vert {
@@ -1936,6 +1961,16 @@
 						batchRestore();
 					});
 				});
+				document.querySelectorAll('[data-action="import"]').forEach(function (el) {
+					el.addEventListener('click', function(event) {
+						openImportDialog();
+					});
+				});
+				document.querySelectorAll('[data-action="export"]').forEach(function (el) {
+					el.addEventListener('click', function(event) {
+						openExportDialog();
+					});
+				});
 			}
 			
 			function initItemSelectors() {
@@ -2644,6 +2679,7 @@
 				window.currentItemId = null
 			}
 			
+			
 			function actionConfirm(message, handler) {
 				document.querySelectorAll('#modals .dialog:not(#categoriesDialog, #commentsDialog)').forEach(el => el.style.display = 'none')
 				document.getElementById('confirmDialog').style.display = 'block'
@@ -2678,6 +2714,91 @@
 				}
 				document.getElementById('modals').style.visibility = 'visible'
 				setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
+			}
+			
+			
+			function openExportDialog() {
+				document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
+				document.getElementById('exportDialog').style.display = 'block'
+				document.querySelector('#exportDialog .btn-yes').onclick = exportItems
+				document.querySelector('#export-scope').children[1].style.display = document.querySelector('.toolbar .search_wrap .search-input-field').value ? '' : 'none'
+				document.querySelector('#export-scope').value = document.querySelectorAll('.page .aside .line input:checked').length > 1 ? 'selected' : 'category'
+				document.getElementById('modals').style.visibility = 'visible'
+				setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
+			}
+			
+			
+			function exportItems() {
+				let scope = document.querySelector('#export-scope').value
+				let catlist = document.querySelector('.category-filter')
+				let query = (catlist && catlist.value ? '&category=' + catlist.value : '') + '&excludeSubCats'
+				if (scope == 'search' && document.querySelector('.search-input-field').value.match(/^(@[\w\d]+|[^@#\s])/)) {
+					query = '&search=' + encodeURIComponent(document.querySelector('.search-input-field').value)
+					if (document.getElementById('search_in_text').checked) query += '&searchInText=1'
+					if (document.getElementById('exact_match').checked) query += '&match=exact'
+				}
+				else if (scope == 'selected') {
+					query = '&ids=[' + getSelectedIds().join(',') + ']'
+				}
+				let link = document.createElement('a')
+				link.href = '/getItems?export&type=' + contentType + query
+				link.style.display = 'none'
+				document.body.appendChild(link)
+				link.click()
+				setTimeout(() => document.body.removeChild(link), 100)
+				hideModals()
+			}
+			
+			function openImportDialog() {
+				document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
+				document.getElementById('importDialog').style.display = 'block'
+				let input = document.querySelector('#select-import-file')
+				if (!input.dropzone) new Dropzone('#select-import-file', {
+					url: '/importItems?type=' + window.contentType,
+					//headers: { 'Content-Type': 'application/json;charset=utf-8' },
+					defaultHeaders: false,
+					//binaryBody: true,
+					disablePreviews: true,
+					withCredentials: true,
+					success: function() {
+						document.querySelector('#importDialog .error').textContent = ''
+						let lineId = document.querySelector('.aside .list .line.selected').dataset.id
+						reloadContent(false)
+							.then(() => {
+								if (lineId) {
+									line = document.querySelector('.aside .list .line[data-id="' + lineId + '"]')
+									if (line) line.click()
+								} else {
+									line = document.querySelector('.aside .list .line')
+									if (line) line.click()
+								}
+							})
+						hideModals()
+					},
+					error: function(file, message) {
+						document.querySelector('#importDialog .error').textContent = message.error
+					}
+				});
+				document.getElementById('modals').style.visibility = 'visible'
+				setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
+			}
+			
+			function importItems(currentTypeOnly) {
+				fetch('/importItems' + (currentTypeOnly ? '?type=' + window.contentType : ''))
+					.then(res => res.json())
+					.then(res => {
+						let lineId = document.querySelector('.aside .list .line.selected').dataset.id
+						reloadContent(false)
+							.then(() => {
+								if (lineId) {
+									line = document.querySelector('.aside .list .line[data-id="' + lineId + '"]')
+									if (line) line.click()
+								} else {
+									line = document.querySelector('.aside .list .line')
+									if (line) line.click()
+								}
+							})
+					})
 			}
 			
 			function hideModals() {
@@ -3256,6 +3377,16 @@
 				<div class="line"><label for="new-category-parent">Parent</label><select data-role="set-category" name="categories" class="form-control" id="new-category-parent"><option value="[]">None</option></select></div>
 				<div class="line"><label for="new-category-title">Title</label><input type="text" name="category-name" class="form-control" id="new-category-title"></div>
 				<div class="buttons"><div class="btn btn-primary btn-yes">Create</div><div class="btn btn-primary btn-no">Cancel</div></div>
+			</div>
+			<div class="dialog" id="importDialog">
+				<div class="line"><div id="select-import-file">Select file</div></div>
+				<div class="line"><span class="error"></span></div>
+				<div style="height: 8px"></div>
+				<div class="buttons"><div class="btn btn-primary btn-no">Cancel</div></div>
+			</div>
+			<div class="dialog" id="exportDialog">
+				<div class="line"><label for="export-scope">Export</label><select class="form-control" id="export-scope"><option value="selected">Selected items</option><option value="search">Search results</option><option value="category">Current category</option></select></div>
+				<div class="buttons"><div class="btn btn-primary btn-yes">Export</div><div class="btn btn-primary btn-no">Cancel</div></div>
 			</div>
 			<div class="dialog" id="settingsDialog">
 				<div class="options">
