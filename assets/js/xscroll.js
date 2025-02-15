@@ -560,9 +560,10 @@ XScroll.init = function(el) {
       c.style.height = 'auto'
    }
 
+   var old_display = el.parentNode.style.display
    el.parentNode.style.display = 'none'
    var _height = st.height
-   el.parentNode.style.display = ''
+   el.parentNode.style.display = old_display
 
    if (el.getAttribute('viewport-height')) {
       el.style.height = parseInt(el.getAttribute('viewport-height')) + 'px'

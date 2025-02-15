@@ -735,6 +735,7 @@
 				opacity: 0;
 			}
 			.dialog {
+				display: none;
 				border: 1px solid #dadada;
 				background: #fff;
 				border-radius: 10px;
