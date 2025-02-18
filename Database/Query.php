@@ -39,7 +39,9 @@ class Query
 
     public function where(array|string $args, bool $or = false)
     {
-        $this->where = "";
+        if (!is_null($this->where) && !preg_match("/\\s+(AND|OR)\\s+$/", $this->where)) {
+            $this->where = "";
+        }
 
         if (gettype($args) == 'string') $args = [$args];
 
@@ -56,12 +58,14 @@ class Query
             $this->where = $args[0];
             return $this;
         }
-        if (!empty($this->where) && !preg_match('/^\\(.*\\)$/', $this->where)) {
+        if (!empty($this->where) && !preg_match('/^\\(.*\\)(\\s+(AND|OR)\\s+)$/', $this->where)) {
             $this->where = '(' . $this->where . ')';
         }
+        $where = '';
         foreach ($args as $str) {
-            $this->where .= (!empty($this->where) ? ($or ? " OR " : " AND ") : "") . "(" . $str . ")";
+            $where .= (!empty($where) ? ($or ? " OR " : " AND ") : "") . "(" . $str . ")";
         }
+        $this->where .= $where;
 
         return $this;
     }
