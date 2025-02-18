@@ -50,6 +50,31 @@ class User extends AbstractEntity
         $this->lastname = '';
         $this->role = self::ROLE_CLIENT;
         $this->registeredAt = new \Datetime();
+
+        self::$requirements = [
+            'username' => [
+                [
+                    'function' => function() {
+                        return \Tpf\Validator\StringFormat::notShorterThan($this->username, self::MIN_USERNAME_LENGTH);
+                    },
+                    'message' => 'must be at least ' . self::MIN_USERNAME_LENGTH . ' characters long'
+                ],
+                [
+                    'function' => function() {
+                        return \Tpf\Validator\Unique::isUniqueFieldForClass(self::class, $this->id ?? 0, 'username', $this->username);
+                    },
+                    'message' => 'must be unique'
+                ],
+            ],
+            'email' => [
+                [
+                    'function' => function() {
+                        return \Tpf\Validator\StringFormat::isEmail($this->email);
+                    },
+                    'message' => 'has incorrect format'
+                ],
+            ]
+        ];
     }
 
     public function getFullName(): string
@@ -60,18 +85,6 @@ class User extends AbstractEntity
     public function getRoleName(): string
     {
         return $this->role == 1 ? 'Admin' : ($this->role == 2 ? 'Manager' : 'User');
-    }
-
-    public function isValid(): bool
-    {
-        if (!(strlen($this->username) >= self::MIN_USERNAME_LENGTH &&
-            preg_match("/^[a-z][a-z\d~._-]*[a-z\d]@[a-z][a-z\d~._-]*[a-z\d]$/", $this->email))) {
-            return false;
-        }
-        if ((new Repository(User::class))->where(["`username` = '" . $this->username . "'", "`id` != " . $this->id])->count() > 0) {
-            return false;
-        }
-        return true;
     }
 
 }
