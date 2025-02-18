@@ -6,6 +6,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 use Tpf\Database\Repository;
+use Tpf\Database\ValidationException;
 use Tpf\Model\AbstractEntity;
 use Tpf\Model\Comment;
 use Tpf\Model\User;
@@ -339,7 +340,11 @@ function saveEntity(Request $request): Response
 
         return new JsonResponse(['result' => 'ok'], 200);
     } catch (Throwable $t) {
-        return new JsonResponse(['error' => 'Bad request', 'exception' => $t->getMessage()], 400);
+        $data = ['error' => 'Bad request', 'exception' => $t->getMessage()];
+        if ($t instanceof ValidationException) {
+            $data['details'] = $entity->errors;
+        }
+        return $response = new JsonResponse($data, 400);
     }
 }
 
