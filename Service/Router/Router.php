@@ -3,11 +3,13 @@
 namespace Tpf\Service\Router;
 
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Tpf\Model\User;
 use Tpf\Service\Logger;
 use Tpf\Service\ErrorPage;
+use Tpf\Service\UsersService;
 
 
 class Router
@@ -169,6 +171,9 @@ class Router
         if ($request->getPathInfo() == '/tpl-test') {
             $data = ['x' => 5, 'user' => ['accounts' => [0 => 'ecad36fc', 1 => 'fd8e2cba']]];
             return new Response(render('example', $data));
+        }
+        if ($request->getPathInfo() == '/updateProfile' && $request->getMethod() == 'POST') {
+            return updateProfile($request);
         }
         if ($request->getPathInfo() == '/activate') {
             return activateUser($request);

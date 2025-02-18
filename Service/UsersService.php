@@ -58,7 +58,7 @@ class UsersService
         $user->save();
     }
 
-    public static function updateProfile(int $id, array $data): void
+    public static function updateProfile(int|string $id, array $data): void
     {
         global $TPF_CONFIG;
         if (!isset($TPF_CONFIG['secret'])) {

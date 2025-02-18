@@ -602,6 +602,35 @@ function search(Request $request, Repository $repository)
     }
 }
 
+function updateProfile(Request $request): Response
+{
+    global $TPF_REQUEST;
+
+    if (!$request->get('id')) {
+        $request->attributes->set('id', $TPF_REQUEST['session']->user->id);
+    }
+    if ($TPF_REQUEST['session']->user->id != $request->get('id') && $TPF_REQUEST['session']->user->role != User::ROLE_ADMIN) {
+        return new JsonResponse(['error' => 'Access denied'], 403);
+    }
+
+    try {
+        $data = $_POST;
+        if (preg_match('~^application/json~', $request->headers->get('Content-Type'))) {
+            $data = json_decode($request->getContent(), true);
+        }
+        UsersService::updateProfile($request->get('id'), $data);
+
+        return new JsonResponse(['result' => 'ok']);
+    } catch (\Throwable $t) {
+        $data = ['error' => 'Bad request', 'exception' => $t->getMessage()];
+        if ($t instanceof ValidationException) {
+            $entity = isset($TPF_REQUEST['exceptions']) ? end($TPF_REQUEST['exceptions'])['target'] : null;
+            $data['details'] = $entity ? $entity->errors : [];
+        }
+        return $response = new JsonResponse($data, 400);
+    }
+}
+
 
 define('MAX_UPLOAD_SIZE', $TPF_CONFIG['max_upload_file_size'] ?? 1024*50*1024);
 
