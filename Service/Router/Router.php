@@ -265,6 +265,20 @@ class Router
             }
             return restoreCategories($request);
         }
+        if ($request->getPathInfo() == '/deleteComment') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            $request->parameters->add('type', 'comment');
+            return deleteEntities($request);
+        }
+        if ($request->getPathInfo() == '/restoreComment') {
+            if (!$canEdit) {
+                return new Response('Access denied', 403);
+            }
+            $request->parameters->add('type', 'comment');
+            return restoreEntities($request);
+        }
         if ($request->getPathInfo() == '/upload' && $request->getMethod() == 'POST') {
             return uploadFile($request);
         }
