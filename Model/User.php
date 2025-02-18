@@ -64,8 +64,14 @@ class User extends AbstractEntity
 
     public function isValid(): bool
     {
-        return strlen($this->username) >= self::MIN_USERNAME_LENGTH &&
-            preg_match("/^[a-z][a-z\d~._-]*[a-z\d]@[a-z][a-z\d~._-]*[a-z\d]$/", $this->email);
+        if (!(strlen($this->username) >= self::MIN_USERNAME_LENGTH &&
+            preg_match("/^[a-z][a-z\d~._-]*[a-z\d]@[a-z][a-z\d~._-]*[a-z\d]$/", $this->email))) {
+            return false;
+        }
+        if ((new Repository(User::class))->where(["`username` = '" . $this->username . "'", "`id` != " . $this->id])->count() > 0) {
+            return false;
+        }
+        return true;
     }
 
 }

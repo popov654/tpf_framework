@@ -28,7 +28,9 @@ class Auth
             if ($session) {
                 $session->user->lastLoginAt = new \Datetime();
                 try {
+                    $session->user->validate = false;
                     $session->user->save();
+                    $session->user->validate = true;
                 } catch (ValidationException $ignore) {}
                 return $session;
             }
