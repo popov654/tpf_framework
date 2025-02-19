@@ -29,6 +29,14 @@ abstract class AbstractEntity
                 $property->setValue($this,0);
             }
         }
+
+        global $TPF_CONFIG;
+
+        $class = get_called_class();
+
+        if (!preg_match('/User|Session$/', $class) && (!isset($TPF_CONFIG['validation']['allow_empty_title']) || $TPF_CONFIG['validation']['allow_empty_title'])) {
+            self::$requirements = ['name' => [['function' => function(string $val) { return strlen(trim($val)) > 0; }, 'message' => 'must not be empty']]];
+        }
     }
 
     public static function fromJSON(?string $data): self
@@ -187,8 +195,12 @@ abstract class AbstractEntity
      */
     public function save(): void
     {
+        global $TPF_REQUEST;
+        
         if ($this->validate && !$this->isValid()) {
-            throw new ValidationException('Data validation error');
+            $exception = new ValidationException('Data validation error');
+            $TPF_REQUEST['exceptions'] = [['exception' => $exception, 'target' => $this]];
+            throw $exception;
         }
         (new Repository(get_class($this)))->save($this);
     }
@@ -205,8 +217,28 @@ abstract class AbstractEntity
 
     public function isValid(): bool
     {
-        return true;
+        $result = true;
+        $this->errors = [];
+        foreach (self::$requirements as $field => $requirements) {
+            if (property_exists($this, $field)) {
+                $res = true;
+                foreach ($requirements as $req) {
+                    if (is_array($req) && isset($req['function']) && is_callable($req['function'])) {
+                        $res = $req['function']($this->$field);
+                        if (!$res) $this->errors[$field] = $req['message'] ?? 'value is invalid';
+                    } else if (is_callable($req)) {
+                        $res = $req($this->$field, $this);
+                        if (!$res) $this->errors[$field] = 'value is invalid';
+                    }
+                    if (!$res) $result = false;
+                }
+            }
+        }
+
+        return $result;
     }
 
     public bool $validate = true;
+    public static array $requirements = [];
+    public array $errors = [];
 }
