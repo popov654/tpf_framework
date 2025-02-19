@@ -38,11 +38,125 @@ PhotoPicker.init = function(els) {
 	});
 }
 
+PhotoPicker.prototype.createCropModal = function(input) {
+	let file = input.files[0]
+	let { element: modal, showFunction } = PhotoPicker.prototype.modal
+	if (!modal) {
+		modal = document.createElement('div')
+		modal.className = 'modal photo-crop-modal'
+		modal.innerHTML = '<div class="header">Select image area</div><div class="content"></div><div class="footer"><center><button class="btn" onclick="this.closest(\'.modal\').style.display = \'none\'">Close</button></center></div>'
+		
+		let content = modal.querySelector('.content')
+		content.innerHTML = '<div><image class="cropper"></div><div class="preview" style="float: left; width: 64px; height: 64px;"></div><div class="preview" style="float: left; width: 24px; height: 24px;"></div>'
+		
+		document.body.appendChild(modal)
+	}
+	modal.target = input
+	let image = modal.querySelector('.cropper')
+	
+	if (file) {
+		image.onload = () => {
+			//URL.revokeObjectURL(image.src);
+			
+			var previews = image.parentNode.parentNode.querySelectorAll('.preview');
+			
+			var previewReady = false;
+			
+			var minCroppedWidth = 180;
+			var minCroppedHeight = 180;
+			
+			var cropper = new Cropper(image, {
+				aspectRatio: 1,
+				viewMode: 1,
+				ready: function () {
+					var clone = this.cloneNode();
+
+					clone.className = '';
+					clone.style.cssText = (
+						'display: block;' +
+						'width: 100%;' +
+						'min-width: 0;' +
+						'min-height: 0;' +
+						'max-width: none;' +
+						'max-height: none;'
+					);
+
+					previews.forEach(function (elem) {
+						elem.innerHTML = '';
+						elem.appendChild(clone.cloneNode());
+					});
+					
+					previewReady = true;
+					
+					setTimeout(this.crop, 100);
+				},
+
+				crop: function (event) {
+					var data = event.detail;
+					var cropper = this.cropper;
+					var imageData = cropper.getImageData();
+					
+					var width = Math.round(data.width);
+					var height = Math.round(data.height);
+					
+					if (
+						width < minCroppedWidth
+						|| height < minCroppedHeight
+					) {
+						cropper.setData({
+							width: Math.max(minCroppedWidth, width),
+							height: Math.max(minCroppedHeight, height),
+						});
+					}
+					
+					var previewAspectRatio = data.width / data.height;
+					if (!previewReady) {
+						setTimeout(arguments.callee.bind(this), 50, event);
+						return;
+					}
+
+					previews.forEach(function (elem) {
+						var previewImage = elem.getElementsByTagName('img').item(0);
+						var previewWidth = elem.offsetWidth;
+						var previewHeight = previewWidth / previewAspectRatio;
+						var imageScaledRatio = data.width / previewWidth;
+
+						elem.style.height = previewHeight + 'px';
+						previewImage.style.width = imageData.naturalWidth / imageScaledRatio + 'px';
+						previewImage.style.height = imageData.naturalHeight / imageScaledRatio + 'px';
+						previewImage.style.marginLeft = -data.x / imageScaledRatio + 'px';
+						previewImage.style.marginTop = -data.y / imageScaledRatio + 'px';
+					});
+					
+					if (input) {
+						var data = cropper.getData()
+						input.cropData = { x: Math.round(data.x), y: Math.round(data.y), size: Math.round(data.width) }
+					}
+				},
+			});
+			modal.cropper = cropper
+		}
+		image.src = URL.createObjectURL(file);
+	}
+	
+	if (showFunction) showFunction()
+	else element.style.display = 'block'
+}
+
 PhotoPicker.prototype.select = function(event) {
 	let input = event.target
 	let self = this
 	let container = this.el
 	if (input.value) {
+		if (event instanceof Event) {
+			delete input.cropData
+		}
+		input.picker = self
+		let picker = input.closest('.photopicker')
+		if (picker.hasAttribute('select-area') && window.Cropper && !input.cropData) {
+			self.createCropModal(input)
+			return
+		}
 		if (input.parentNode.dataset.imageUrl) {
 			let url = input.parentNode.dataset.imageUrl
 			if (TaskManager.addedPhotos.indexOf(url) != -1) {
@@ -52,8 +166,19 @@ PhotoPicker.prototype.select = function(event) {
 				TaskManager.removedPhotos.push(url)
 			}
 		}
+		
 		let form = new FormData()
 		form.append('file', input.files[0])
+		if (picker.params) {
+			for (let key in picker.params) {
+				form.append(key, picker.params[key])
+			}
+		}
+		if (input.cropData) {
+			for (let key in input.cropData) {
+				form.append(key, input.cropData[key])
+			}
+		}
 		fetch(file_upload_url, {
 			method: 'POST',
 			body: form

@@ -4,7 +4,9 @@
 		<title>Admin panel</title>
 		<link rel="stylesheet" href="/tpf/bootstrap/css/bootstrap.min.css" />
 		<link rel="stylesheet" href="/tpf/css/style.css" />
+		<link rel="stylesheet" href="/tpf/css/cropper.min.css" />
 		<script src="/tpf/bootstrap/js/bootstrap.min.js"></script>
+		<script src="/tpf/js/cropper.min.js"></script>
 		<style>
 			body {
 				padding: 0;
@@ -1025,6 +1027,32 @@
 				z-index: 10;
 			}
 			
+			.cropper {
+				max-width: 480px;
+				max-height: 75vh;
+				margin: 6px 0;
+			}
+			#cropPhotoDialog .preview {
+				float: none !important;
+				display: inline-block;
+				overflow: hidden;
+				margin: 5px 5px 5px 0;
+				border-radius: 50%;
+			}
+			.cropper-view-box,
+			.cropper-face {
+				border-radius: 50%;
+			}
+
+			/* The css styles for `outline` do not follow `border-radius` on iOS/Safari (#979). */
+			.cropper-view-box {
+				outline: 0;
+				box-shadow: 0 0 0 1px #39f;
+			}
+			#cropPhotoDialog .buttons > * {
+				width: 80px;
+			}
+			
 			.xscroll_thumb_horz, .xscroll_thumb_vert {
 				background: #cdcdcd;
 				border-radius: 4px;
@@ -1934,7 +1962,9 @@
 						suggestItemsByName(input, selector.dataset.type)
 					});
 					form.addEventListener('input', debounce(function(event) {
-						event.target.closest('.form-control').classList.remove('is-invalid');
+						if (event.target.closest('.form-control')) {
+							event.target.closest('.form-control').classList.remove('is-invalid');
+						}
 						if (!event.target.closest('.form').querySelector('.is-invalid')) {
 							document.querySelector('#validation_error').style.display = ''
 						}
@@ -2655,6 +2685,29 @@
 				}, 250)
 			}
 			
+			function showCropPhotoDialog() {
+				document.querySelectorAll('#modals .dialog:not(#editProfileDialog)').forEach(el => el.style.display = 'none')
+				document.getElementById('cropPhotoDialog').style.display = 'block'
+				
+				document.getElementById('modals').style.visibility = 'visible'
+				setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
+			}
+			
+			window.addEventListener('DOMContentLoaded', function() {
+				document.querySelector('#cropPhotoDialog .btn-yes').addEventListener('click', function() {
+					document.querySelector('#cropPhotoDialog .btn-no').click()
+					if (document.querySelector('#cropPhotoDialog').target) {
+						let target = document.querySelector('#cropPhotoDialog').target
+						target.picker.select({ target })
+					}
+				});
+				document.querySelector('#cropPhotoDialog .btn-no').addEventListener('click', function() {
+					document.querySelector('#cropPhotoDialog').cropper.destroy()
+				});
+				if (window.PhotoPicker) PhotoPicker.prototype.modal = { element: document.getElementById('cropPhotoDialog'), showFunction: showCropPhotoDialog }
+			});
+			
+			
 			function getPlural(number, word) {
 				return number + ' ' + word + (number != 1 ? 's' : '')
 			}
@@ -2751,6 +2804,16 @@
 			function initPhotoPickers() {
 				let els = document.querySelectorAll('[data-role="photopicker"]')
 				PhotoPicker.init(els);
+				els.forEach(el => {
+					let picker = el.photopicker
+					if (contentType == 'user') {
+						picker.setAttribute('select-area', '')
+						picker.params = { type: 'avatar' }
+					} else {
+						picker.removeAttribute('select-area')
+						picker.params = {}
+					}
+				});
 			}
 			
 			function removePhoto(file) {
@@ -2974,6 +3037,14 @@
 					<div class="line form-check form-switch"><label for="confirmCommentDeleteOption">Ask before permanently deleting comments</label><input class="form-check-input float-end" role="switch" type="checkbox" id="confirmCommentDeleteOption"></div>
 				</div>
 				<div class="buttons"><div class="btn btn-primary btn-no">Close</div></div>
+			</div>
+			<div class="dialog" id="cropPhotoDialog">
+				<div class="text">Select image area:</div>
+				<div class="content">
+					<div><image class="cropper"></div>
+					<div class="preview" style="float: left; width: 64px; height: 64px;"></div><div class="preview" style="float: left; width: 28px; height: 28px;"></div>
+				</div>
+				<div class="buttons"><div class="btn btn-primary btn-yes">Select</div><div class="btn btn-primary btn-no">Cancel</div></div>
 			</div>
 		</div>
 		<div id="validation_error">
