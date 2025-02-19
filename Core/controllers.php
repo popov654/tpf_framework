@@ -401,6 +401,8 @@ function saveEntity(Request $request): Response
         if (!isset($data['modifiedAt'])) {
             $data['modifiedAt'] = new \DateTime();
         }
+        prepareData($data);
+
         AbstractEntity::fillFromArray($entity, $data);
         $entity->save();
 
@@ -681,6 +683,8 @@ function updateProfile(Request $request): Response
         if (preg_match('~^application/json~', $request->headers->get('Content-Type'))) {
             $data = json_decode($request->getContent(), true);
         }
+        prepareData($data);
+
         UsersService::updateProfile($request->get('id'), $data);
 
         return new JsonResponse(['result' => 'ok']);
@@ -691,6 +695,22 @@ function updateProfile(Request $request): Response
             $data['details'] = $entity ? $entity->errors : [];
         }
         return $response = new JsonResponse($data, 400);
+    }
+}
+
+function prepareData(array &$data): void
+{
+    global $TPF_CONFIG;
+    
+    if ($TPF_CONFIG['store_full_asset_paths']) return;
+
+    $upload_dir = ($TPF_CONFIG['upload_dir'] ?? '/media/');
+
+    $keys = ['photo', 'photos', 'image', 'images', 'avatar', 'avatars', 'files', 'videos'];
+    foreach ($keys as $key) {
+        if (array_key_exists($key, $data)) {
+            $data[$key] = preg_replace("~" . $upload_dir . "(?:(image|audio|video|document|file)s?/)?(?:users?/)?~", "", $data[$key]);
+        }
     }
 }
 
@@ -794,6 +814,12 @@ function removeFiles(Request $request): Response
     foreach ($files as $file) {
         if (file_exists(PATH . '/public' . $upload_dir . $file)) {
             unlink(PATH . '/public' . $upload_dir . $file);
+            if (strpos($file, 'users/') !== false && strpos($file, 'users/thumb/') === false) {
+                $thumbUrl = str_replace('users/', 'users/thumb/', $file);
+                if (file_exists(PATH . '/public' . $upload_dir . $thumbUrl)) {
+                    unlink(PATH . '/public' . $upload_dir . $thumbUrl);
+                }
+            }
         }
     }
 

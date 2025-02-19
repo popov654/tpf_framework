@@ -161,9 +161,11 @@ PhotoPicker.prototype.select = function(event) {
 			let url = input.parentNode.dataset.imageUrl
 			if (TaskManager.addedPhotos.indexOf(url) != -1) {
 				removePhoto(url.replace(/^\/media/, ''))
-				TaskManager.addedPhotos.splice(TaskManager.addedPhotos.indexOf(url), 1)
+				let key = picker.classList.contains('profilePhoto') ? 'addedProfilePhotos' : 'addedPhotos'
+				TaskManager[key].splice(TaskManager[key].indexOf(url), 1)
 			} else {
-				TaskManager.removedPhotos.push(url)
+				let key = picker.classList.contains('profilePhoto') ? 'removedProfilePhotos' : 'removedPhotos'
+				TaskManager[key].push(url)
 			}
 		}
 		
@@ -214,6 +216,14 @@ PhotoPicker.prototype.select = function(event) {
 
 PhotoPicker.prototype.setPhotos = function(photos) {
 	let container = this.el
+	if (container.classList.contains('profilePhoto')) {
+		let path = imagePath + 'users/'
+		for (let i = 0; i < photos.length; i++) {
+			if (photos[i].indexOf(path) != 0) {
+				photos[i] = path + photos[i]
+			}
+		}
+	}
 	for (let i = 0; i < container.children.length-1; i++) {
 		container.removeChild(container.children[0])
 	}
@@ -253,10 +263,12 @@ PhotoPicker.prototype.add = function(url) {
 	removeBtn.onclick = function() {
 		let url = this.parentNode.dataset.imageUrl
 		if (TaskManager.addedPhotos.indexOf(url) != -1) {
+			let key = container.classList.contains('profilePhoto') ? 'addedProfilePhotos' : 'addedPhotos'
 			removePhoto(url.replace(/^\/media/, ''))
-			TaskManager.addedPhotos.splice(TaskManager.addedPhotos.indexOf(url), 1)
+			TaskManager.addedPhotos.splice(TaskManager[key].indexOf(url), 1)
 		} else {
-			TaskManager.removedPhotos.push(url)
+			let key = container.classList.contains('profilePhoto') ? 'removedProfilePhotos' : 'removedPhotos'
+			TaskManager[key].push(url)
 		}
 		let parent = this.parentNode.parentNode
 		parent.removeChild(this.parentNode)
@@ -334,4 +346,13 @@ function initTagsWidgets() {
 			}
 		})
 	});
+}
+
+			
+var TaskManager = {
+	addedPhotos: [],
+	removedPhotos: [],
+	addedProfilePhotos: [],
+	removedProfilePhotos: [],
+	formChanged: false
 }

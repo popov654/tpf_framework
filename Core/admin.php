@@ -95,6 +95,8 @@
 			#menu .header .thumb {
 				width: 32px;
 				height: 32px;
+				/* border-radius: 50%;
+				box-shadow: 0 0 1px 1px rgb(113, 113, 113, 0.68); */
 			}
 			#menu .menu {
 				height: 0;
@@ -990,8 +992,65 @@
 				margin: 6px 0 13px;
 			}
 			
+			#editProfileDialog {
+				width: 570px;
+			}
+			#editProfileDialog .options {
+				display: flex;
+				gap: 18px;
+				margin-bottom: 18px;
+			}
+			#editProfileDialog .options > * {
+				flex: 1 1 auto;
+			}
+			#editProfileDialog .options > :first-child {
+				width: 190px;
+				padding: 10px 24px;
+			}
+			#editProfileDialog .options input {
+				display: block;
+				margin-bottom: 8px;
+				width: 86%;
+			}
+			#editProfileDialog .buttons > * {
+				width: 90px;
+			}
+			#editProfileDialog .profilePhoto {
+				width: 100%;
+				height: 280px;
+				background: url('/tpf/icons/images/no-photo.jpg') center / 90px no-repeat #eee;
+				display: flex;
+				align-items: flex-end;
+				justify-content: center;
+			}
+			.photopicker.profilePhoto .thumb.selector::before {
+				top: calc(50% - 100px);
+			}
+			#editProfileDialog .profilePhoto .changePhoto {
+				cursor: pointer;
+				display: inline-block;
+				padding: 3px 6px;
+				font-size: 15px;
+				background-color: rgba(85, 85, 85, 0.35);
+				border-radius: 4px;
+				color: #fcfcfc;
+				position: relative;
+				top: -20px;
+			}
+			#editProfileDialog .profilePhoto .changePhoto:hover {
+				text-decoration: underline;
+			}
+			
+			#cropPhotoDialog {
+				width: 580px;
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+			}
+			
 			#settingsDialog {
-				width: 480px;
+				width: 500px;
 			}
 			#settingsDialog .form-switch {
 				padding-left: 0;
@@ -1024,6 +1083,7 @@
 			#settingsDialog .buttons > * {
 				width: 80px;
 			}
+			
 			
 			#confirmDialog {
 				position: absolute;
@@ -1312,6 +1372,78 @@
 						window.location.href = logout_url + '?hash=' + session_hash
 					})
 				});
+				
+				document.querySelector('#menu .header').onclick = function() {
+					openProfileEditor()
+				}
+				
+				document.querySelector('#editProfileDialog .buttons .btn-no').addEventListener('click', function() {
+					removePhotosBatch(TaskManager.addedProfilePhotos)
+					TaskManager.addedProfilePhotos = []
+					TaskManager.removedProfilePhotos = []
+				});
+				
+				function loadProfileData() {
+					document.querySelector('#editProfileDialog [name="firstname"]').value = user.firstname
+					document.querySelector('#editProfileDialog [name="lastname"]').value = user.lastname
+					document.querySelector('#editProfileDialog [name="email"]').value = user.email
+					document.querySelector('#editProfileDialog [name="photo"]').value = user.photo
+					document.querySelector('#editProfileDialog .profilePhoto').picker.setPhotos(user.photo.length ? [user.photo] : [])
+				}
+				
+				function openProfileEditor() {
+					document.querySelectorAll('#modals .dialog').forEach(el => el.style.display = 'none')
+					document.getElementById('editProfileDialog').style.display = 'block'
+					
+					document.querySelector('#editProfileDialog .buttons .btn-yes').onclick = saveProfileData
+					let changer = document.querySelector('#editProfileDialog .profilePhoto')
+					if (!changer.picker) {
+						changer.picker = new PhotoPicker(changer, false)
+						changer.field = document.querySelector('#editProfileDialog [name="photo"]')
+						changer.classList.add('profilePhoto')
+						changer.setAttribute('select-area', '')
+						changer.params = { type: 'avatar' }
+					}
+					
+					loadProfileData()
+					
+					document.getElementById('modals').style.visibility = 'visible'
+					setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
+				}
+				
+				function saveProfileData() {
+					let data = {
+						firstname: document.querySelector('#editProfileDialog [name="firstname"]').value,
+						lastname: document.querySelector('#editProfileDialog [name="lastname"]').value,
+						email: document.querySelector('#editProfileDialog [name="email"]').value,
+						photo: document.querySelector('#editProfileDialog [name="photo"]').value
+					}
+					fetch('/updateProfile', { method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify(data)
+					})
+					.then(res => {
+						if (res.status >= 400) throw {};
+						return res.json()
+					})
+					.then((res) => {
+						console.log('Profile has been saved')
+						user.firstname = data.firstname
+						user.lastname = data.lastname
+						user.email = data.email
+						user.photo = data.photo.replace(/\/media\/images\/(users\/)?/, '')
+						document.querySelectorAll('.userpic').forEach(el => {
+							el.innerHTML = generateThumbHtml(user);
+						});
+						
+						removePhotosBatch(TaskManager.removedProfilePhotos)
+						TaskManager.addedProfilePhotos = []
+						TaskManager.removedProfilePhotos = []
+					});
+					hideModals()
+				}
 				
 				document.querySelector('#settingsDialog .options').addEventListener('input', function(event) {
 					let value = event.target.value;
@@ -2013,13 +2145,6 @@
 			}
 			
 			
-			var TaskManager = {
-				addedPhotos: [],
-				removedPhotos: [],
-				formChanged: false
-			}
-			
-			
 			var cache = sessionStorage.cache ? JSON.parse(sessionStorage.cache) : { schemas: {}, categories: {} }
 			
 			if (!sessionStorage.cache) sessionStorage.cache = `{
@@ -2116,7 +2241,7 @@
 			function generateThumbHtml(item) {
 				let image = item.image || item.image_url || item.cover || item.cover_url || item.photo || item.photo_url;
 				let nophoto = item.username ? '/tpf/icons/userpic.svg' : '/tpf/icons/images/no-photo.jpg';
-				image = image ? imagePath + image : nophoto;
+				image = image ? imagePath + (item.username ? 'users/thumb/' : '') + image : nophoto;
 				return '<div class="thumb' + (image == nophoto ? ' noimage' : '') + '" style="background: url(\'' + image + '\') center center / cover no-repeat"></div>';
 			}
 			
@@ -3246,7 +3371,7 @@
 			}
 		</script>
 		<script>
-			<?php $user = $TPF_REQUEST['session']->user ?? new User(); ?>let user = { username: '<?php echo $user->username; ?>', firstname: '<?php echo $user->firstname; ?>', lastname: '<?php echo $user->lastname; ?>', image: '<?php echo $user->photo; ?>' }
+			<?php $user = $TPF_REQUEST['session']->user ?? new User(); ?>let user = { username: '<?php echo $user->username; ?>', email: '<?php echo $user->email; ?>', photo: '<?php echo $user->photo; ?>', firstname: '<?php echo $user->firstname; ?>', lastname: '<?php echo $user->lastname; ?>', photo: '<?php echo $user->photo; ?>' }
 			let logout_url = '<?php echo $TPF_CONFIG['logout_url'] ?? '/logout' ?>'; let session_hash = '<?php echo substr($TPF_REQUEST['session']->secureSessionId, -8); ?>';
 			let users_roles = <?php echo json_encode(Tpf\Service\UsersService::getRoles()); ?>;
 		</script>
@@ -3389,6 +3514,24 @@
 				<div class="line"><label for="export-scope">Export</label><select class="form-control" id="export-scope"><option value="selected">Selected items</option><option value="search">Search results</option><option value="category">Current category</option></select></div>
 				<div class="buttons"><div class="btn btn-primary btn-yes">Export</div><div class="btn btn-primary btn-no">Cancel</div></div>
 			</div>
+			<div class="dialog" id="editProfileDialog">
+				<div class="options">
+					<div class="left">
+						<div class="photopicker profilePhoto">
+							<!--<div class="changePhoto">Change</div>-->
+						</div>
+						<input name="photo" type="hidden">
+					</div>
+					<div class="right">
+						<div class="line"><label for="firstname">First name</label><input type="text" name="firstname" autocomplete="off"></div>
+						<div class="line"><label for="lastname">Last name</label><input type="text" name="lastname" autocomplete="off"></div>
+						<div class="line"><label for="email">E-mail</label><input type="text" name="email" autocomplete="off"></div>
+						<div class="line"><label for="password">New password</label><input type="text" name="password" autocomplete="off"></div>
+						<div class="line"><label for="password">Confirm password</label><input type="text" name="password_confirm" autocomplete="off"></div>
+					</div>
+				</div>
+				<div class="buttons"><div class="btn btn-primary btn-yes">Save</div><div class="btn btn-primary btn-no">Cancel</div></div>
+			</div>
 			<div class="dialog" id="settingsDialog">
 				<div class="options">
 					<div class="line form-check form-switch"><label for="preserveNavigationOption">Remember last category and page number</label><input class="form-check-input float-end" role="switch" type="checkbox" id="preserveNavigationOption"></div>
@@ -3398,7 +3541,7 @@
 				</div>
 				<div class="buttons"><div class="btn btn-primary btn-no">Close</div></div>
 			</div>
-			<div class="dialog" id="cropPhotoDialog">
+			<div class="dialog" id="cropPhotoDialog" data-type="secondary">
 				<div class="text">Select image area:</div>
 				<div class="content">
 					<div><image class="cropper"></div>
