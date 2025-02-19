@@ -54,6 +54,8 @@ PhotoPicker.prototype.createCropModal = function(input) {
 	modal.target = input
 	let image = modal.querySelector('.cropper')
 	
+	const minimumSize = 180
+	
 	if (file) {
 		image.onload = () => {
 			//URL.revokeObjectURL(image.src);
@@ -62,8 +64,15 @@ PhotoPicker.prototype.createCropModal = function(input) {
 			
 			var previewReady = false;
 			
-			var minCroppedWidth = 180;
-			var minCroppedHeight = 180;
+			if (image.naturalWidth < minimumSize || image.naturalHeight < minimumSize) {
+				input.value = null
+				modal.style.display = 'none'
+				showInfo('The image is too small, minimum size is ' + minimumSize + 'x' + minimumSize)
+				return
+			}
+			
+			var minCroppedWidth = Math.min(Math.round(image.naturalWidth * 0.9), 180);
+			var minCroppedHeight = Math.min(Math.round(image.naturalHeight * 0.9), 180);
 			
 			var cropper = new Cropper(image, {
 				aspectRatio: 1,

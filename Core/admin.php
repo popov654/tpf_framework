@@ -1085,7 +1085,7 @@
 			}
 			
 			
-			#confirmDialog {
+			#confirmDialog, #infoDialog {
 				position: absolute;
 				left: 50%;
 				top: 50%;
@@ -2804,9 +2804,17 @@
 				window.currentItemId = null
 			}
 			
+			function showInfo(message) {
+				document.querySelectorAll('#modals .dialog:not(#categoriesDialog, #commentsDialog, #editProfileDialog)').forEach(el => el.style.display = 'none')
+				document.getElementById('infoDialog').style.display = 'block'
+				let text = document.querySelector('#infoDialog .text')
+				text.innerHTML = message
+				document.getElementById('modals').style.visibility = 'visible'
+				setTimeout(() => document.getElementById('modals').style.opacity = '1', 0)
+			}	
 			
 			function actionConfirm(message, handler) {
-				document.querySelectorAll('#modals .dialog:not(#categoriesDialog, #commentsDialog)').forEach(el => el.style.display = 'none')
+				document.querySelectorAll('#modals .dialog:not(#categoriesDialog, #commentsDialog, #editProfileDialog)').forEach(el => el.style.display = 'none')
 				document.getElementById('confirmDialog').style.display = 'block'
 				let text = document.querySelector('#confirmDialog .text')
 				text.innerHTML = message
