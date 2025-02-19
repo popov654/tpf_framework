@@ -2755,6 +2755,7 @@
 				let input = document.querySelector('#select-import-file')
 				if (!input.dropzone) new Dropzone('#select-import-file', {
 					url: '/importItems?type=' + window.contentType,
+					acceptedFiles: "application/json",
 					//headers: { 'Content-Type': 'application/json;charset=utf-8' },
 					defaultHeaders: false,
 					//binaryBody: true,
