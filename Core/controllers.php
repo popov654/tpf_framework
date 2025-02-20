@@ -279,7 +279,7 @@ function getEntity(Request $request): Response
             return new JsonResponse(['error' => 'Element not found'], 404);
         }
 
-        $fields = array_keys($className::getSchema($type));
+        $fields = array_keys(AbstractEntity::getSchema($type));
         $index = 0;
         foreach ($fields as $field) {
             if (substr($field, -2) == 'Id' && property_exists($className, substr($field, 0, -2))) {

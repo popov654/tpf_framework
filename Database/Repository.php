@@ -2,6 +2,7 @@
 
 namespace Tpf\Database;
 
+use Tpf\Model\AbstractEntity;
 use Tpf\Model\User;
 use Tpf\Model\Category;
 
@@ -75,9 +76,9 @@ class Repository extends Query
     }
 
     /**
-     * @method object|null fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3)
+     * @method AbstractEntity|null fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3)
      */
-    public function fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3)
+    public function fetchOne(int $id, bool $loadEmbedded = false, int $maxDepth = 3): ?AbstractEntity
     {
         $query = clone $this;
         $query
@@ -92,9 +93,9 @@ class Repository extends Query
     }
 
     /**
-     * @method object|null findOneBy(array $args, bool $loadEmbedded = false, int $maxDepth = 3)
+     * @method AbstractEntity|null findOneBy(array $args, bool $loadEmbedded = false, int $maxDepth = 3)
      */
-    public function findOneBy($args, bool $loadEmbedded = false, int $maxDepth = 3)
+    public function findOneBy($args, bool $loadEmbedded = false, int $maxDepth = 3): ?AbstractEntity
     {
         $query = clone $this;
         $query->whereEq($args);
@@ -110,7 +111,7 @@ class Repository extends Query
      * @method bool save(object $entity)
      * @throws \Exception
      */
-    public function save($entity)
+    public function save($entity): bool
     {
         global $dbal;
 
@@ -177,7 +178,7 @@ class Repository extends Query
     /**
      * @method void remove(object $entity)
      */
-    public function remove($entity)
+    public function remove($entity): void
     {
         global $dbal;
 
