@@ -1940,7 +1940,7 @@
 				
 				window.contentType = localStorage.contentType;
 				
-				window.page = localStorage.page !== 'undefined' ? Math.max(1, parseInt(localStorage.page)) : 1;
+				window.page = localStorage.page !== undefined ? Math.max(1, parseInt(localStorage.page)) : 1;
 				
 				updateItemTypes(types);
 				
